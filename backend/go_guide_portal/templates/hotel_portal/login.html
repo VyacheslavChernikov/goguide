@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Вход | SmartHotel 360</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0d2a40;
+      --panel: #123650;
+      --text: #f7f9fc;
+      --muted: #cdd7e1;
+      --accent: #2dd4bf;
+      --shadow: 0 14px 30px rgba(0,0,0,0.28);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Poppins", sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .card {
+      width: 100%;
+      max-width: 420px;
+      background: var(--panel);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: var(--shadow);
+    }
+    h1 {
+      margin: 0 0 16px;
+      font-size: 24px;
+      font-weight: 700;
+      text-align: center;
+    }
+    form { display: flex; flex-direction: column; gap: 12px; }
+    label { font-size: 14px; color: var(--muted); }
+    input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+      border-radius: 12px;
+      font-size: 14px;
+    }
+    input:focus { outline: 2px solid var(--accent); }
+    .btn {
+      border: none;
+      background: var(--accent);
+      color: #0d1b2a;
+      padding: 12px;
+      border-radius: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: var(--shadow);
+    }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 16px 34px rgba(0,0,0,0.35); }
+    .error { color: #fca5a5; font-size: 13px; margin: -4px 0 6px; }
+    .muted { color: var(--muted); text-align: center; margin-top: 8px; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Войти в кабинет</h1>
+    {% if form.errors %}
+      <div class="error">Неверный логин или пароль.</div>
+    {% endif %}
+    <form method="post">
+      {% csrf_token %}
+      <label for="id_username">Логин</label>
+      <input type="text" name="username" id="id_username" required>
+
+      <label for="id_password">Пароль</label>
+      <input type="password" name="password" id="id_password" required>
+
+      <button class="btn" type="submit">Войти</button>
+    </form>
+    <div class="muted">SmartHotel 360</div>
+  </div>
+</body>
+</html>
+

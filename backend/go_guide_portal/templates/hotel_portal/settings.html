@@ -1,0 +1,36 @@
+{% extends "hotel_portal/dashboard.html" %}
+
+{% block content %}
+<div class="page-title">Настройки</div>
+
+<div class="chart-container">
+  <h5 class="mb-3">Настройки AI-консьержа</h5>
+  <form method="post">
+    {% csrf_token %}
+    <div class="row g-3">
+      <div class="col-md-6">
+        <label class="form-label">Имя бота</label>
+        <input type="text" class="form-control" name="bot_name" value="{{ ai_settings.bot_name }}" required>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Тональность</label>
+        <select class="form-select" name="tone" required>
+          <option value="дружелюбный" {% if ai_settings.tone == 'дружелюбный' %}selected{% endif %}>Дружелюбный</option>
+          <option value="формальный" {% if ai_settings.tone == 'формальный' %}selected{% endif %}>Формальный</option>
+          <option value="неформальный" {% if ai_settings.tone == 'неформальный' %}selected{% endif %}>Неформальный</option>
+        </select>
+      </div>
+      <div class="col-12">
+        <label class="form-label">Системный промпт</label>
+        <textarea class="form-control" name="system_prompt" rows="6" required>{{ ai_settings.system_prompt }}</textarea>
+        <div class="form-text">Этот текст определяет поведение AI-консьержа</div>
+      </div>
+    </div>
+    <div class="mt-3">
+      <button type="submit" class="btn btn-primary">
+        <i class="fas fa-save me-1"></i>Сохранить
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}

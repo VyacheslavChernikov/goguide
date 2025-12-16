@@ -1,0 +1,252 @@
+{% extends "hotel_portal/dashboard.html" %}
+
+{% block content %}
+<div class="page-title">Номера</div>
+
+<!-- Filters -->
+<div class="chart-container">
+  <div class="row g-3 align-items-end">
+    <div class="col-md-3">
+      <label class="form-label">Период</label>
+      <select class="form-select" id="periodSelect">
+        <option value="week" {% if period == 'week' %}selected{% endif %}>За неделю</option>
+        <option value="month" {% if period == 'month' %}selected{% endif %}>За месяц</option>
+        <option value="year" {% if period == 'year' %}selected{% endif %}>За год</option>
+      </select>
+    </div>
+    <div class="col-md-2">
+      <label class="form-label">с</label>
+      <input type="date" class="form-control" id="dateFrom" value="{{ date_from|date:'Y-m-d' }}">
+    </div>
+    <div class="col-md-2">
+      <label class="form-label">по</label>
+      <input type="date" class="form-control" id="dateTo" value="{{ date_to|date:'Y-m-d' }}">
+    </div>
+    <div class="col-md-3">
+      <button type="button" class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#addRoomModal">
+        <i class="fas fa-plus me-1"></i>Добавить номер
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Rooms Table -->
+<div class="table-responsive">
+  <table class="table table-dark table-hover table-sm align-middle">
+    <thead>
+      <tr>
+        <th>Номер</th>
+        <th>Тип</th>
+        <th>Цена / ночь</th>
+        <th>Доступен</th>
+        <th>Загрузка %</th>
+        <th>Рекомендация</th>
+        <th>Действия</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for room_data in rooms_data %}
+      <tr>
+        <td>{{ room_data.room.room_number }}</td>
+        <td>{{ room_data.room.room_type }}</td>
+        <td>{{ room_data.room.price_per_night }} ₽</td>
+        <td>
+          {% if room_data.room.is_available %}
+            <span class="badge bg-success">Да</span>
+          {% else %}
+            <span class="badge bg-danger">Нет</span>
+          {% endif %}
+        </td>
+        <td>
+          <div class="d-flex align-items-center">
+            <div class="progress me-2" style="width: 80px;">
+              <div class="progress-bar bg-{% if room_data.occupancy_rate > 70 %}success{% elif room_data.occupancy_rate > 30 %}warning{% else %}danger{% endif %}"
+                   role="progressbar" style="width: {{ room_data.occupancy_rate }}%"
+                   aria-valuenow="{{ room_data.occupancy_rate }}" aria-valuemin="0" aria-valuemax="100">
+              </div>
+            </div>
+            {{ room_data.occupancy_rate }}%
+          </div>
+        </td>
+        <td>
+          <span class="badge bg-{% if room_data.recommendation == 'Высокая загрузка' %}success{% elif room_data.recommendation == 'Средняя загрузка' %}warning{% else %}secondary{% endif %}">
+            {{ room_data.recommendation }}
+          </span>
+        </td>
+        <td>
+          <button class="btn btn-sm btn-outline-primary"
+                  data-room-id="{{ room_data.room.id }}"
+                  data-room-number="{{ room_data.room.room_number }}"
+                  data-room-type="{{ room_data.room.room_type }}"
+                  data-price="{{ room_data.room.price_per_night }}"
+                  data-available="{{ room_data.room.is_available }}"
+                  onclick="openEditModal(this)">
+            <i class="fas fa-pen"></i> Редактировать
+          </button>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="7" class="text-center text-muted">Нет номеров</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Analytics Block -->
+<div class="chart-container">
+  <h5>Аналитика загрузки</h5>
+  <div class="row g-3">
+    <div class="col-md-4">
+      <div class="stats-card">
+        <div class="icon primary">
+          <i class="fas fa-chart-pie fa-lg"></i>
+        </div>
+        <h3>Общая загрузка</h3>
+        <div class="value">{{ overall_occupancy }}%</div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="stats-card">
+        <div class="icon success">
+          <i class="fas fa-bed fa-lg"></i>
+        </div>
+        <h3>Номеров с бронированиями</h3>
+        <div class="value">{{ occupied_rooms }}/{{ total_rooms }}</div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="stats-card">
+        <div class="icon warning">
+          <i class="fas fa-calendar-alt fa-lg"></i>
+        </div>
+        <h3>Период анализа</h3>
+        <div class="value">{{ date_from|date:"d.m.Y" }} - {{ date_to|date:"d.m.Y" }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Room Modal -->
+<div class="modal fade" id="addRoomModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Добавить номер</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="add_room" value="1">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Номер</label>
+            <input type="text" class="form-control" name="room_number" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Тип номера</label>
+            <input type="text" class="form-control" name="room_type" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Описание</label>
+            <textarea class="form-control" name="description" rows="3" placeholder="Краткое описание номера"></textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Цена за ночь</label>
+            <input type="number" class="form-control" name="price_per_night" step="0.01" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Фото (URL)</label>
+            <input type="url" class="form-control" name="photo_url" placeholder="https://...">
+          </div>
+          <div class="mb-3">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="is_available" id="isAvailable" checked>
+              <label class="form-check-label" for="isAvailable">
+                Свободен
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+          <button type="submit" class="btn btn-primary">Добавить</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Room Modal -->
+<div class="modal fade" id="roomEditModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Редактирование номера</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Номер</label>
+            <input type="text" class="form-control" id="editRoomNumber">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Тип номера</label>
+            <input type="text" class="form-control" id="editRoomType">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Цена за ночь</label>
+            <input type="number" class="form-control" id="editPrice" step="0.01">
+          </div>
+          <div class="mb-3 form-check">
+            <input class="form-check-input" type="checkbox" id="editAvailable">
+            <label class="form-check-label" for="editAvailable">Свободен</label>
+          </div>
+          <div class="alert alert-info mb-0 small">Сохранение изменений не реализовано в демо, окно для просмотра/редактирования данных.</div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+          <button type="button" class="btn btn-primary" disabled>Сохранить</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+document.getElementById('periodSelect').addEventListener('change', function() {
+  updateFilters();
+});
+
+document.getElementById('dateFrom').addEventListener('change', function() {
+  updateFilters();
+});
+
+document.getElementById('dateTo').addEventListener('change', function() {
+  updateFilters();
+});
+
+function updateFilters() {
+  const period = document.getElementById('periodSelect').value;
+  const dateFrom = document.getElementById('dateFrom').value;
+  const dateTo = document.getElementById('dateTo').value;
+
+  let url = `/dashboard/rooms/?period=${period}`;
+  if (dateFrom) url += `&date_from=${dateFrom}`;
+  if (dateTo) url += `&date_to=${dateTo}`;
+
+  window.location.href = url;
+}
+
+function openEditModal(btn) {
+  const modal = new bootstrap.Modal(document.getElementById('roomEditModal'));
+  document.getElementById('editRoomNumber').value = btn.dataset.roomNumber || '';
+  document.getElementById('editRoomType').value = btn.dataset.roomType || '';
+  document.getElementById('editPrice').value = btn.dataset.price || '';
+  document.getElementById('editAvailable').checked = btn.dataset.available === 'True';
+  modal.show();
+}
+</script>
+{% endblock %}

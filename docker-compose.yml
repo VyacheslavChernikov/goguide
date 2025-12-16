@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: smarthotel_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: smarthotel
+      POSTGRES_USER: smarthotel
+      POSTGRES_PASSWORD: smarthotel
+    volumes:
+      - smarthotel_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U smarthotel"]
+      interval: 3s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+  backend:
+    build:
+      context: ./backend
+    container_name: smarthotel_backend
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: smarthotel
+      DB_USER: smarthotel
+      DB_PASSWORD: smarthotel
+
+  bot:
+    build:
+      context: ./bot
+    container_name: smarthotel_bot
+    restart: always
+    depends_on:
+      backend:
+        condition: service_started
+    environment:
+      API_BASE_URL: http://backend:8000/api/
+      BOT_TOKEN: ${BOT_TOKEN}
+
+volumes:
+  smarthotel_postgres_data:   # ← вот здесь двоеточие обязательно!

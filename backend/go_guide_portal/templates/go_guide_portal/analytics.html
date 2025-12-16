@@ -1,0 +1,126 @@
+{% extends "go_guide_portal/base.html" %}
+{% block content %}
+<div class="flex items-center justify-between mb-4">
+  <div>
+    <h1 class="text-2xl font-semibold">Аналитика</h1>
+    <p class="text-muted text-sm">Ключевые метрики и графики по бронированиям</p>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+  <div class="bg-panel border border-white/5 rounded-xl p-4">
+    <div class="text-muted text-sm">Всего бронирований</div>
+    <div class="text-3xl font-bold mt-2">{{ total_bookings|default:0 }}</div>
+  </div>
+  <div class="bg-panel border border-white/5 rounded-xl p-4">
+    <div class="text-muted text-sm">Активные</div>
+    <div class="text-3xl font-bold mt-2">{{ active_bookings|default:0 }}</div>
+  </div>
+  <div class="bg-panel border border-white/5 rounded-xl p-4">
+    <div class="text-muted text-sm">Выручка</div>
+    <div class="text-3xl font-bold mt-2">{{ total_revenue|default:0 }} ₽</div>
+  </div>
+  <div class="bg-panel border border-white/5 rounded-xl p-4">
+    <div class="text-muted text-sm">Загрузка номеров</div>
+    <div class="text-3xl font-bold mt-2">{{ occupancy_rate|default:0 }}%</div>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+  <div class="bg-panel border border-white/5 rounded-xl p-4">
+    <div class="flex items-center justify-between mb-2">
+      <h3 class="text-lg font-semibold">Выручка по месяцам</h3>
+    </div>
+    <canvas id="revenueChart" height="200"></canvas>
+  </div>
+  <div class="bg-panel border border-white/5 rounded-xl p-4">
+    <div class="flex items-center justify-between mb-2">
+      <h3 class="text-lg font-semibold">Загрузка по дням недели</h3>
+    </div>
+    <canvas id="weekdayChart" height="200"></canvas>
+  </div>
+</div>
+
+<div class="bg-panel border border-white/5 rounded-xl p-4">
+  <h3 class="text-lg font-semibold mb-3">Топ-5 номеров</h3>
+  <div class="overflow-x-auto">
+    <table class="min-w-full text-sm">
+      <thead class="text-muted bg-white/5">
+        <tr>
+          <th class="text-left px-4 py-3">Номер</th>
+          <th class="text-left px-4 py-3">Бронирований</th>
+          <th class="text-left px-4 py-3">Выручка</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for room in top_rooms %}
+        <tr class="border-t border-white/5">
+          <td class="px-4 py-3">{{ room.title }}</td>
+          <td class="px-4 py-3">{{ room.bookings_count|default:0 }}</td>
+          <td class="px-4 py-3">{{ room.revenue|default:0 }} ₽</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="3" class="px-4 py-4 text-center text-muted">Данных пока нет</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const revenueData = {{ revenue_chart|safe }};
+  const weekdayStats = {{ weekday_stats|safe }};
+
+  const ctxRevenue = document.getElementById('revenueChart');
+  if (ctxRevenue) {
+    new Chart(ctxRevenue, {
+      type: 'bar',
+      data: {
+        labels: revenueData.map(i => i.label),
+        datasets: [{
+          label: 'Выручка',
+          data: revenueData.map(i => i.value),
+          backgroundColor: '#64FFDA33',
+          borderColor: '#64FFDA',
+          borderWidth: 1.5,
+        }]
+      },
+      options: {
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: false } },
+          y: { grid: { color: 'rgba(255,255,255,0.05)' } }
+        }
+      }
+    });
+  }
+
+  const ctxWeekday = document.getElementById('weekdayChart');
+  if (ctxWeekday) {
+    new Chart(ctxWeekday, {
+      type: 'line',
+      data: {
+        labels: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
+        datasets: [{
+          label: 'Бронирований',
+          data: weekdayStats,
+          backgroundColor: '#FE7B5433',
+          borderColor: '#FE7B54',
+          borderWidth: 2,
+          tension: 0.3,
+          fill: true,
+        }]
+      },
+      options: {
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: false } },
+          y: { grid: { color: 'rgba(255,255,255,0.05)' }, beginAtZero: true }
+        }
+      }
+    });
+  }
+</script>
+{% endblock %}
+

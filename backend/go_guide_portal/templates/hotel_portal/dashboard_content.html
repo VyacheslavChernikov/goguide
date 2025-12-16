@@ -1,0 +1,205 @@
+{% extends "hotel_portal/dashboard.html" %}
+
+{% block content %}
+<!-- Welcome block -->
+<div class="card-panel mb-3">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+    <div>
+      <div class="text-uppercase small" style="color: var(--muted);">Отель: {{ hotel.name }}</div>
+      <h3 class="mb-1">Добро пожаловать, {{ user_name }}!</h3>
+      <div style="color: var(--muted);">Управление ценами, доступностью и аналитикой</div>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+      <a href="/dashboard/rooms/" class="btn-main"><i class="fas fa-plus me-1"></i>Добавить номер</a>
+      <a href="/dashboard/bookings/" class="btn-ghost"><i class="fas fa-calendar-plus me-1"></i>Создать бронь</a>
+    </div>
+  </div>
+</div>
+
+<!-- Quick mini cards -->
+<div class="row g-3 mb-3">
+  <div class="col-lg-3 col-md-6">
+    <div class="card-panel h-100">
+      <div class="text-uppercase small" style="color: var(--muted);">База знаний</div>
+      <div class="fw-semibold fs-5">Загрузите материалы RAG</div>
+      <a class="btn-ghost mt-2" href="/dashboard/knowledge/"><i class="fas fa-book-open me-1"></i>Управлять</a>
+    </div>
+  </div>
+  <div class="col-lg-3 col-md-6">
+    <div class="card-panel h-100">
+      <div class="text-uppercase small" style="color: var(--muted);">Настройки бота</div>
+      <div class="fw-semibold fs-5">GigaChat / сценарии</div>
+      <a class="btn-ghost mt-2" href="/dashboard/settings/"><i class="fas fa-robot me-1"></i>Открыть</a>
+    </div>
+  </div>
+  <div class="col-lg-3 col-md-6">
+    <div class="card-panel h-100">
+      <div class="text-uppercase small" style="color: var(--muted);">Туры 360°</div>
+      <div class="fw-semibold fs-5">Добавить/редактировать ссылки</div>
+      <a class="btn-ghost mt-2" href="/dashboard/tours/"><i class="fas fa-panorama me-1"></i>Перейти</a>
+    </div>
+  </div>
+  <div class="col-lg-3 col-md-6">
+    <div class="card-panel h-100">
+      <div class="text-uppercase small" style="color: var(--muted);">Цены и доступность</div>
+      <div class="fw-semibold fs-5">График загрузки</div>
+      <a class="btn-ghost mt-2" href="/dashboard/rooms/"><i class="fas fa-chart-line me-1"></i>Настроить</a>
+    </div>
+  </div>
+</div>
+
+<!-- Stats row -->
+<div class="row g-3 mb-3">
+  <div class="col-lg-3 col-md-6">
+    <div class="card-panel h-100">
+      <div class="text-uppercase small" style="color: var(--muted);">Active Bookings</div>
+      <div class="fs-3 fw-bold">{{ active_bookings|default:0 }}</div>
+      <div class="small" style="color: var(--muted);">Текущие подтверждённые</div>
+    </div>
+  </div>
+  <div class="col-lg-3 col-md-6">
+    <div class="card-panel h-100">
+      <div class="text-uppercase small" style="color: var(--muted);">Total Bookings</div>
+      <div class="fs-3 fw-bold">{{ total_bookings|default:0 }}</div>
+      <div class="small" style="color: var(--muted);">За период</div>
+    </div>
+  </div>
+  <div class="col-lg-3 col-md-6">
+    <div class="card-panel h-100">
+      <div class="text-uppercase small" style="color: var(--muted);">Total Revenue</div>
+      <div class="fs-3 fw-bold">{{ total_revenue|default:0 }} ₽</div>
+      <div class="small" style="color: var(--muted);">Подтверждённые</div>
+    </div>
+  </div>
+  <div class="col-lg-3 col-md-6">
+    <div class="card-panel h-100">
+      <div class="text-uppercase small" style="color: var(--muted);">Occupancy Rate</div>
+      <div class="fs-3 fw-bold">{{ occupancy_rate|default:0 }}%</div>
+      <div class="small" style="color: var(--muted);">Средняя загрузка</div>
+    </div>
+  </div>
+</div>
+
+<!-- Chart + Top rooms -->
+<div class="row g-3 mb-3">
+  <div class="col-lg-8">
+    <div class="card-panel h-100">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h6 class="mb-0">Occupancy Analysis</h6>
+        <span class="small" style="color: var(--muted);">За период</span>
+      </div>
+      <canvas id="occupancyChart" height="220"></canvas>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="card-panel h-100">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h6 class="mb-0">Top Rooms</h6>
+        <span class="small" style="color: var(--muted);">Загрузка</span>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-dark table-sm mb-0">
+          <thead>
+            <tr>
+              <th>Номер</th>
+              <th>Тип</th>
+              <th>Загрузка %</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for room in top_rooms %}
+            <tr>
+              <td>{{ room.room_number }}</td>
+              <td>{{ room.room_type }}</td>
+              <td>{{ room.occupancy }}%</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="3" class="text-center text-muted">Нет данных</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Recent bookings -->
+<div class="card-panel">
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <h6 class="mb-0">Последние бронирования</h6>
+    <a class="btn-ghost btn-sm" href="/dashboard/bookings/"><i class="fas fa-external-link-alt me-1"></i>Открыть все</a>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-dark table-sm mb-0">
+      <thead>
+        <tr>
+          <th>Гость</th>
+          <th>Номер</th>
+          <th>Даты</th>
+          <th>Статус</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for booking in recent_bookings %}
+        <tr>
+          <td>{{ booking.guest_name }}</td>
+          <td>{{ booking.room.room_number }}</td>
+          <td>{{ booking.date_from|date:"d.m" }} - {{ booking.date_to|date:"d.m" }}</td>
+          <td>
+            {% if booking.is_confirmed %}
+              <span class="badge bg-success">Подтверждено</span>
+            {% else %}
+              <span class="badge bg-warning">Ожидает</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="4" class="text-center text-muted">Нет бронирований</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const ctx = document.getElementById('occupancyChart').getContext('2d');
+  const occupancyData = {{ occupancy_data|default:"[]"|safe }};
+
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: occupancyData.map(item => item.date),
+      datasets: [{
+        label: 'Загрузка (%)',
+        data: occupancyData.map(item => item.value),
+        borderColor: '#27c2d3',
+        backgroundColor: 'rgba(39, 194, 211, 0.12)',
+        tension: 0.15,
+        fill: true
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: {
+          beginAtZero: true,
+          max: 100,
+          ticks: { color: '#9fb4d3' },
+          grid: { color: 'rgba(255,255,255,0.06)' }
+        },
+        x: {
+          ticks: { color: '#9fb4d3' },
+          grid: { display: false }
+        }
+      }
+    }
+  });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,51 @@
+{% extends "hotel_portal/dashboard.html" %}
+
+{% block content %}
+<div class="page-title">Туры 360°</div>
+
+<div class="chart-container">
+  <h5 class="mb-3">Управление турами 360°</h5>
+  <form method="post" class="row g-3">
+    {% csrf_token %}
+    <div class="col-md-5">
+      <label class="form-label">Название тура</label>
+      <input type="text" class="form-control" name="name" placeholder="Например: Номер Стандарт" required>
+    </div>
+    <div class="col-md-5">
+      <label class="form-label">URL тура</label>
+      <input type="url" class="form-control" name="url" placeholder="https://example.com/tour.html" required>
+    </div>
+    <div class="col-md-2 d-flex align-items-end">
+      <button type="submit" class="btn btn-primary w-100">
+        <i class="fas fa-plus me-1"></i>Добавить
+      </button>
+    </div>
+  </form>
+</div>
+
+<div class="chart-container">
+  <h5 class="mb-3">Существующие туры</h5>
+  <div class="row g-3">
+    {% for tour in tours %}
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-body">
+          <h6 class="card-title">{{ tour.name }}</h6>
+          <p class="card-text text-muted">{{ tour.url }}</p>
+          <a href="{{ tour.url }}" target="_blank" class="btn btn-outline-primary btn-sm">
+            <i class="fas fa-external-link-alt me-1"></i>Открыть тур
+          </a>
+        </div>
+      </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+      <div class="text-center text-muted">
+        <i class="fas fa-panorama fa-3x mb-3"></i>
+        <p>Туры ещё не добавлены</p>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

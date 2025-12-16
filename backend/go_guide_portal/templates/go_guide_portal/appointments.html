@@ -1,0 +1,38 @@
+{% extends "go_guide_portal/base.html" %}
+{% block content %}
+<div class="bg-panel rounded-xl p-6 border border-white/5">
+  <div class="flex items-center justify-between mb-4">
+    <h3 class="text-xl font-semibold">{{ page_title|default:"Записи" }}</h3>
+    <a href="#" class="px-4 py-2 rounded-lg border border-accent text-bg bg-accent hover:bg-accent/80">Экспорт CSV</a>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="min-w-full text-sm">
+      <thead class="text-muted">
+        <tr class="border-b border-white/5">
+          <th class="text-left py-2">Клиент</th>
+          <th class="text-left py-2">Услуга</th>
+          <th class="text-left py-2">Начало</th>
+          <th class="text-left py-2">Окончание</th>
+          <th class="text-left py-2">Сумма</th>
+          <th class="text-left py-2">Статус</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for app in appointments %}
+        <tr class="border-b border-white/5">
+          <td class="py-2">{{ app.client_name }}</td>
+          <td class="py-2">{{ app.service.title }}</td>
+          <td class="py-2">{{ app.start_at }}</td>
+          <td class="py-2">{{ app.end_at }}</td>
+          <td class="py-2">{{ app.total_price }} ₽</td>
+          <td class="py-2">{% if app.is_confirmed %}Подтверждено{% else %}Ожидает{% endif %}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="py-3 text-muted">Нет записей</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+

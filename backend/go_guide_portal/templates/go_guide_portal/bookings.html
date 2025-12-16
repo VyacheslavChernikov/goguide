@@ -1,0 +1,257 @@
+{% extends "go_guide_portal/base.html" %}
+{% block content %}
+<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+  <div>
+    <h1 class="text-2xl font-semibold">Бронирования</h1>
+    <p class="text-muted text-sm">Управляйте бронированиями и статусами</p>
+  </div>
+  <div class="flex items-center gap-2">
+    <a href="{% url 'bookings_export' %}{% if current_status and current_status != 'all' %}?status={{ current_status }}{% endif %}" class="px-4 py-2 rounded-lg border border-white/10 hover:bg-white/5 text-sm">Экспорт CSV</a>
+    <button id="openCreateBooking" class="px-4 py-2 rounded-lg bg-accent text-bg font-medium hover:bg-accent/80 transition">+ Создать</button>
+  </div>
+</div>
+
+<form method="get" action="{% url 'bookings' %}" class="bg-panel border border-white/5 rounded-xl p-4 mb-4 grid grid-cols-1 md:grid-cols-4 gap-3">
+  <div>
+    <label class="block text-sm mb-1">Статус</label>
+    <select name="status" class="w-full px-3 py-2 rounded-lg bg-panel border border-white/10 text-text focus:outline-none focus:ring-2 focus:ring-accent">
+      <option value="all" {% if current_status == 'all' %}selected{% endif %}>Все</option>
+      {% for value,label in statuses %}
+        <option value="{{ value }}" {% if current_status == value %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div>
+    <label class="block text-sm mb-1">Дата с</label>
+    <input type="date" name="start_date" value="{{ date_from }}" class="w-full px-3 py-2 rounded-lg bg-panel border border-white/10 text-text focus:outline-none focus:ring-2 focus:ring-accent">
+  </div>
+  <div>
+    <label class="block text-sm mb-1">Дата по</label>
+    <input type="date" name="end_date" value="{{ date_to }}" class="w-full px-3 py-2 rounded-lg bg-panel border border-white/10 text-text focus:outline-none focus:ring-2 focus:ring-accent">
+  </div>
+  <div class="flex items-end">
+    <button type="submit" class="w-full md:w-auto px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20">Применить</button>
+  </div>
+</form>
+
+<div class="bg-panel border border-white/5 rounded-xl overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="min-w-full text-sm">
+      <thead class="text-muted bg-white/5">
+        <tr>
+          <th class="text-left px-4 py-3">Клиент</th>
+          <th class="text-left px-4 py-3">Номер</th>
+          <th class="text-left px-4 py-3">Начало</th>
+          <th class="text-left px-4 py-3">Окончание</th>
+          <th class="text-left px-4 py-3">Сумма</th>
+          <th class="text-left px-4 py-3">Статус</th>
+          <th class="text-left px-4 py-3">Действия</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for app in appointments %}
+        <tr class="border-t border-white/5">
+          <td class="px-4 py-3">{{ app.client_name }}</td>
+          <td class="px-4 py-3">{{ app.service.title }}</td>
+          <td class="px-4 py-3">{{ app.start_at }}</td>
+          <td class="px-4 py-3">{{ app.end_at }}</td>
+          <td class="px-4 py-3">{{ app.total_price }} ₽</td>
+          <td class="px-4 py-3">
+            {% if app.status == 'confirmed' %}
+              <span class="px-2 py-1 rounded bg-green-500/20 text-green-200 text-xs">Подтверждено</span>
+            {% elif app.status == 'cancelled' %}
+              <span class="px-2 py-1 rounded bg-red-500/20 text-red-200 text-xs">Отменено</span>
+            {% else %}
+              <span class="px-2 py-1 rounded bg-yellow-500/20 text-yellow-100 text-xs">Ожидает</span>
+            {% endif %}
+          </td>
+          <td class="px-4 py-3 space-x-2">
+            <button
+              class="px-3 py-2 text-xs rounded-lg bg-white/10 hover:bg-white/20 transition edit-booking"
+              data-id="{{ app.id }}"
+              data-url="{% url 'booking_update' app.id %}"
+              data-client="{{ app.client_name|escape }}"
+              data-phone="{{ app.client_phone|escape }}"
+              data-email="{{ app.client_email|default_if_none:''|escape }}"
+              data-service="{{ app.service.id }}"
+              data-start="{{ app.start_at|date:'Y-m-d\\TH:i' }}"
+              data-end="{{ app.end_at|date:'Y-m-d\\TH:i' }}"
+              data-price="{{ app.total_price }}"
+              data-status="{{ app.status|default:'pending' }}"
+              data-comment="{{ app.comment|default_if_none:''|escape }}"
+            >Редактировать</button>
+            <form action="{% url 'booking_delete' app.id %}" method="post" class="inline">
+              {% csrf_token %}
+              <button type="submit" onclick="return confirm('Удалить бронирование?')" class="px-3 py-2 text-xs rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-100 transition">Удалить</button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7" class="px-4 py-6 text-center text-muted">Бронирований пока нет.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Create modal -->
+<div id="createBookingModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-40 hidden">
+  <div class="bg-panel border border-white/10 rounded-xl w-full max-w-3xl p-6 relative">
+    <button class="absolute top-3 right-3 text-muted hover:text-text" data-close>×</button>
+    <h3 class="text-xl font-semibold mb-4">Новое бронирование</h3>
+    <form action="{% url 'booking_create' %}" method="post" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {% csrf_token %}
+      <div>
+        <label class="block text-sm mb-1">Имя клиента *</label>
+        {{ form.client_name }}
+      </div>
+      <div>
+        <label class="block text-sm mb-1">Телефон *</label>
+        {{ form.client_phone }}
+      </div>
+      <div>
+        <label class="block text-sm mb-1">Email</label>
+        {{ form.client_email }}
+      </div>
+      <div>
+        <label class="block text-sm mb-1">Номер</label>
+        {{ form.service }}
+      </div>
+      <div>
+        <label class="block text-sm mb-1">Начало</label>
+        {{ form.start_at }}
+      </div>
+      <div>
+        <label class="block text-sm mb-1">Окончание</label>
+        {{ form.end_at }}
+      </div>
+      <div>
+        <label class="block text-sm mb-1">Сумма</label>
+        {{ form.total_price }}
+      </div>
+      <div>
+        <label class="block text-sm mb-1">Статус</label>
+        {{ form.status }}
+      </div>
+      <div class="md:col-span-2">
+        <label class="block text-sm mb-1">Комментарий</label>
+        {{ form.comment }}
+      </div>
+      <div class="md:col-span-2 flex justify-end space-x-3 pt-2">
+        <button type="button" data-close class="px-4 py-2 rounded-lg border border-white/10 hover:bg-white/5">Отмена</button>
+        <button type="submit" class="px-4 py-2 rounded-lg bg-accent text-bg font-medium hover:bg-accent/80 transition">Сохранить</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Edit modal -->
+<div id="editBookingModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-40 hidden">
+  <div class="bg-panel border border-white/10 rounded-xl w-full max-w-3xl p-6 relative">
+    <button class="absolute top-3 right-3 text-muted hover:text-text" data-close>×</button>
+    <h3 class="text-xl font-semibold mb-4">Редактировать бронирование</h3>
+    <form id="editBookingForm" action="#" method="post" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {% csrf_token %}
+      <div>
+        <label class="block text-sm mb-1">Имя клиента *</label>
+        <input type="text" name="client_name" id="editClient" required class="w-full px-3 py-2 rounded-lg bg-panel border border-white/10 text-text placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent" />
+      </div>
+      <div>
+        <label class="block text-sm mb-1">Телефон *</label>
+        <input type="text" name="client_phone" id="editPhone" required class="w-full px-3 py-2 rounded-lg bg-panel border border-white/10 text-text placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent" />
+      </div>
+      <div>
+        <label class="block text-sm mb-1">Email</label>
+        <input type="email" name="client_email" id="editEmail" class="w-full px-3 py-2 rounded-lg bg-panel border border-white/10 text-text placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent" />
+      </div>
+      <div>
+        <label class="block text-sm mb-1">Номер</label>
+        <select name="service" id="editService" class="w-full px-3 py-2 rounded-lg bg-panel border border-white/10 text-text focus:outline-none focus:ring-2 focus:ring-accent">
+          {% for srv in unit.services.all %}
+            <option value="{{ srv.id }}">{{ srv.title }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm mb-1">Начало</label>
+        <input type="datetime-local" name="start_at" id="editStart" class="w-full px-3 py-2 rounded-lg bg-panel border border-white/10 text-text focus:outline-none focus:ring-2 focus:ring-accent" />
+      </div>
+      <div>
+        <label class="block text-sm mb-1">Окончание</label>
+        <input type="datetime-local" name="end_at" id="editEnd" class="w-full px-3 py-2 rounded-lg bg-panel border border-white/10 text-text focus:outline-none focus:ring-2 focus:ring-accent" />
+      </div>
+      <div>
+        <label class="block text-sm mb-1">Сумма</label>
+        <input type="number" step="0.01" min="0" name="total_price" id="editPrice" class="w-full px-3 py-2 rounded-lg bg-panel border border-white/10 text-text focus:outline-none focus:ring-2 focus:ring-accent" />
+      </div>
+      <div>
+        <label class="block text-sm mb-1">Статус</label>
+        <select name="status" id="editStatus" class="w-full px-3 py-2 rounded-lg bg-panel border border-white/10 text-text focus:outline-none focus:ring-2 focus:ring-accent">
+          {% for value,label in statuses %}
+            <option value="{{ value }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="md:col-span-2">
+        <label class="block text-sm mb-1">Комментарий</label>
+        <textarea name="comment" id="editComment" rows="3" class="w-full px-3 py-2 rounded-lg bg-panel border border-white/10 text-text placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent"></textarea>
+      </div>
+      <div class="md:col-span-2 flex justify-end space-x-3 pt-2">
+        <button type="button" data-close class="px-4 py-2 rounded-lg border border-white/10 hover:bg-white/5">Отмена</button>
+        <button type="submit" class="px-4 py-2 rounded-lg bg-accent text-bg font-medium hover:bg-accent/80 transition">Сохранить</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  (function() {
+    const createModal = document.getElementById('createBookingModal');
+    const editModal = document.getElementById('editBookingModal');
+    const openCreate = document.getElementById('openCreateBooking');
+    const editForm = document.getElementById('editBookingForm');
+
+    const toggle = (el, show) => {
+      if (!el) return;
+      el.classList.toggle('hidden', !show);
+    };
+
+    if (openCreate) openCreate.addEventListener('click', () => toggle(createModal, true));
+
+    document.querySelectorAll('[data-close]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        toggle(createModal, false);
+        toggle(editModal, false);
+      });
+    });
+
+    document.querySelectorAll('.edit-booking').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const d = btn.dataset;
+        if (!editForm) return;
+        editForm.action = d.url;
+        document.getElementById('editClient').value = d.client || '';
+        document.getElementById('editPhone').value = d.phone || '';
+        document.getElementById('editEmail').value = d.email || '';
+        document.getElementById('editService').value = d.service || '';
+        document.getElementById('editStart').value = d.start || '';
+        document.getElementById('editEnd').value = d.end || '';
+        document.getElementById('editPrice').value = d.price || '';
+        document.getElementById('editStatus').value = d.status || 'pending';
+        document.getElementById('editComment').value = d.comment || '';
+        toggle(editModal, true);
+      });
+    });
+
+    [createModal, editModal].forEach(modal => {
+      if (!modal) return;
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) toggle(modal, false);
+      });
+    });
+  })();
+</script>
+{% endblock %}
+

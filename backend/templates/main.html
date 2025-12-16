@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SmartHotel 360</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0d2a40;
+      --text: #f7f9fc;
+      --muted: #cdd7e1;
+      --accent: #2dd4bf;
+      --shadow: 0 14px 30px rgba(0,0,0,0.28);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Poppins", sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px;
+    }
+    .wrap {
+      max-width: 760px;
+      text-align: center;
+    }
+    h1 {
+      margin: 0 0 12px;
+      font-size: 34px;
+      font-weight: 700;
+    }
+    p {
+      margin: 6px 0 18px;
+      font-weight: 400;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+    .cta {
+      display: inline-block;
+      background: var(--accent);
+      color: #0d1b2a;
+      padding: 14px 22px;
+      border-radius: 12px;
+      font-weight: 700;
+      text-decoration: none;
+      box-shadow: var(--shadow);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .cta:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 18px 34px rgba(0,0,0,0.35);
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>SmartHotel 360</h1>
+    <p>
+      SaaS-платформа для управления отелем: бронирования, номера, RAG-база знаний и AI-консьерж.
+    </p>
+    <a class="cta" href="/login/">Войти в кабинет</a>
+  </div>
+</body>
+</html>
+
