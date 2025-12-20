@@ -3,6 +3,8 @@ import hashlib
 import io
 import json
 import csv
+import uuid
+from decimal import Decimal
 from datetime import timedelta, datetime
 from pathlib import Path
 
@@ -13,9 +15,11 @@ from django.contrib import messages
 from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
 from django.db.models import Sum, Count, Q
+from django.urls import reverse
+from django.views.decorators.csrf import csrf_exempt
 from dotenv import load_dotenv
 
-from business_units.models import BusinessUnit
+from business_units.models import BusinessUnit, PayoutRequest
 from services.models import Service
 from appointments.models import Appointment
 from go_guide_portal.models import BusinessUnitUser
@@ -25,6 +29,7 @@ from go_guide_portal.forms import (
     BusinessUnitForm,
     AdminPasswordForm,
     GigaChatSettingsForm,
+    PayoutRequestForm,
 )
 from go_guide_portal.navigation import get_ui_texts, get_dashboard_labels
 from bot.gigachat_ai import ask_gigachat, get_gigachat_access_token
@@ -117,6 +122,65 @@ def _build_analytics_context(unit):
     )
 
     return services_block + "\n\n" + bookings_block
+
+
+def _calculate_balance(unit):
+    """
+    Считаем доступный баланс по оплаченных бронированиям минус созданные/выплаченные выводы.
+    """
+    paid_total = Appointment.objects.filter(business_unit=unit, payment_status="paid").aggregate(total=Sum("total_price"))[
+        "total"
+    ] or Decimal("0")
+    reserved = (
+        PayoutRequest.objects.filter(business_unit=unit, status__in=["pending", "processing"]).aggregate(total=Sum("amount"))[
+            "total"
+        ]
+        or Decimal("0")
+    )
+    paid_out = (
+        PayoutRequest.objects.filter(business_unit=unit, status="paid").aggregate(total=Sum("amount"))["total"]
+        or Decimal("0")
+    )
+    available = Decimal(paid_total) - Decimal(reserved) - Decimal(paid_out)
+    return {
+        "paid_total": Decimal(paid_total),
+        "reserved": Decimal(reserved),
+        "paid_out": Decimal(paid_out),
+        "available": available,
+    }
+
+
+def _initiate_payout(payout: PayoutRequest, unit: BusinessUnit, webhook_url: str = None):
+    """
+    Заглушка/упрощённый запуск выплаты.
+    Если провайдер не настроен — помечаем как pending/manual.
+    Если выбрана mock — сразу считаем выплаченным.
+    Для реальных провайдеров оставляем status=processing, ожидаем webhook.
+    """
+    provider = (unit.payout_provider or os.getenv("PAYOUT_PROVIDER") or "manual") if unit else "manual"
+    payout.provider = provider
+    payout.provider_payout_id = payout.provider_payout_id or f"{provider}-{payout.id}"
+
+    meta = payout.meta or {}
+    meta["provider"] = provider
+    meta["mode"] = getattr(unit, "payout_mode", "test") if unit else "test"
+    meta["webhook_url"] = webhook_url
+    meta["config_present"] = bool(getattr(unit, "payout_provider_key", "") and getattr(unit, "payout_provider_secret", ""))
+
+    if provider == "mock":
+        payout.status = "paid"
+        payout.processed_at = timezone.now()
+        meta["note"] = "mock payout — помечено как выплаченное сразу"
+    elif provider == "manual":
+        payout.status = "pending"
+        meta["note"] = "Ручной вывод — отметьте статус через вебхук или вручную"
+    else:
+        payout.status = "processing"
+        meta["note"] = "Провайдер задан. Требуется реальный API-вызов + вебхук."
+
+    payout.meta = meta
+    payout.save()
+    return payout
 
 
 def _build_bookings_context(unit):
@@ -599,9 +663,11 @@ def appointment_create(request):
     if form.is_valid():
         obj = form.save(commit=False)
         obj.business_unit = unit
+        pay_status = request.POST.get("payment_status") or obj.payment_status or "pending"
+        obj.payment_status = pay_status
         if not obj.total_price and obj.service:
             obj.total_price = obj.service.price
-        obj.is_confirmed = obj.status == "confirmed"
+        obj.is_confirmed = obj.status == "confirmed" or pay_status == "paid"
         obj.save()
         form.save_m2m()
         messages.success(request, "Запись создана.")
@@ -626,7 +692,9 @@ def appointment_update(request, pk):
     if form.is_valid():
         obj = form.save(commit=False)
         obj.business_unit = unit
-        obj.is_confirmed = obj.status == "confirmed"
+        pay_status = request.POST.get("payment_status") or obj.payment_status or "pending"
+        obj.payment_status = pay_status
+        obj.is_confirmed = obj.status == "confirmed" or pay_status == "paid"
         obj.save()
         form.save_m2m()
         messages.success(request, "Запись обновлена.")
@@ -754,10 +822,11 @@ def booking_create(request):
     if form.is_valid():
         booking = form.save(commit=False)
         booking.business_unit = unit
-        booking.payment_status = "pending"
+        booking.payment_status = request.POST.get("payment_status") or "pending"
         # если цена не указана — подставим цену услуги
         if not booking.total_price and booking.service:
             booking.total_price = booking.service.price
+        booking.is_confirmed = booking.status == "confirmed" or booking.payment_status == "paid"
         booking.save()
         form.save_m2m()
         messages.success(request, "Бронирование создано.")
@@ -780,9 +849,8 @@ def booking_update(request, pk):
     if form.is_valid():
         obj = form.save(commit=False)
         obj.business_unit = unit
-        if obj.payment_status == "paid":
-            obj.is_confirmed = True
-        obj.is_confirmed = obj.status == "confirmed"
+        obj.payment_status = request.POST.get("payment_status") or obj.payment_status or "pending"
+        obj.is_confirmed = obj.status == "confirmed" or obj.payment_status == "paid"
         obj.save()
         form.save_m2m()
         messages.success(request, "Бронирование обновлено.")
@@ -1135,16 +1203,50 @@ def settings_view(request):
 
     unit_form = BusinessUnitForm(instance=unit)
     pwd_form = AdminPasswordForm(user=request.user)
+    payout_form = PayoutRequestForm()
 
     # embed code for booking widget
     base_url = request.build_absolute_uri("/").rstrip("/")
+    webhook_url = request.build_absolute_uri(reverse("payout_webhook"))
     embed_code = (
         f'<script src="{base_url}/static/widget/booking-widget.js" defer></script>\n'
         f'<booking-widget data-bu-id="{unit.id}" data-api-base="{base_url}/api"></booking-widget>'
     )
 
+    payouts = PayoutRequest.objects.filter(business_unit=unit).order_by("-created_at")[:20]
+    balance = _calculate_balance(unit)
+    payout_provider = os.getenv("PAYOUT_PROVIDER", "manual") or "manual"
+    payout_provider = unit.payout_provider or payout_provider
+
     if request.method == "POST":
-        if "save_unit" in request.POST:
+        if "create_payout" in request.POST:
+            payout_form = PayoutRequestForm(request.POST)
+            if payout_form.is_valid():
+                payout = payout_form.save(commit=False)
+                payout.business_unit = unit
+                payout.currency = "RUB"
+                payout.requested_by = request.user
+                available = _calculate_balance(unit)["available"]
+                if payout.amount and Decimal(payout.amount) > available:
+                    messages.error(request, "Недостаточно средств для вывода.")
+                    return redirect("settings")
+                payout.save()
+                _initiate_payout(payout, unit, webhook_url=webhook_url)
+                messages.success(request, f"Заявка на выплату создана: {payout.amount} {payout.currency}.")
+            else:
+                messages.error(request, "Исправьте ошибки в форме вывода.")
+        elif "create_test_payout" in request.POST:
+            payout = PayoutRequest.objects.create(
+                business_unit=unit,
+                amount=Decimal("1.00"),
+                fee=Decimal("0"),
+                currency="RUB",
+                requested_by=request.user,
+                comment="Тестовая выплата",
+            )
+            _initiate_payout(payout, unit, webhook_url=webhook_url)
+            messages.success(request, "Тестовая выплата создана (mock/processing). Проверьте статус ниже или по вебхуку.")
+        elif "save_unit" in request.POST:
             unit_form = BusinessUnitForm(request.POST, instance=unit)
             if unit_form.is_valid():
                 unit_form.save()
@@ -1167,6 +1269,11 @@ def settings_view(request):
         'unit_form': unit_form,
         'pwd_form': pwd_form,
         'embed_code': embed_code,
+        'payout_form': payout_form,
+        'payouts': payouts,
+        'balance': balance,
+        'payout_provider': payout_provider,
+        'webhook_url': webhook_url,
     }
     return render(request, "go_guide_portal/settings.html", context)
 
@@ -1200,4 +1307,53 @@ def tours_view(request):
         'page_title': ui_texts.get("service_title", "Туры"),
     }
     return render(request, "go_guide_portal/tours.html", context)
+
+
+@csrf_exempt
+def payout_webhook(request):
+    """
+    Приём вебхуков от провайдера выплат.
+    Ожидаем JSON с полями payout_id (или id/provider_payout_id) и status.
+    """
+    if request.method != "POST":
+        return JsonResponse({"error": "method not allowed"}, status=405)
+
+    try:
+        payload = json.loads(request.body.decode("utf-8"))
+    except Exception:
+        return JsonResponse({"error": "invalid json"}, status=400)
+
+    payout_id = payload.get("payout_id") or payload.get("id") or payload.get("provider_payout_id")
+    new_status = payload.get("status")
+
+    if not payout_id or not new_status:
+        return JsonResponse({"error": "payout_id and status are required"}, status=400)
+
+    try:
+        payout = PayoutRequest.objects.get(provider_payout_id=payout_id)
+    except PayoutRequest.DoesNotExist:
+        return JsonResponse({"error": "payout not found"}, status=404)
+
+    status_map = {
+        "succeeded": "paid",
+        "paid": "paid",
+        "processing": "processing",
+        "pending": "pending",
+        "canceled": "failed",
+        "cancelled": "failed",
+        "failed": "failed",
+        "error": "failed",
+    }
+    mapped = status_map.get(new_status.lower(), None if not isinstance(new_status, str) else new_status.lower())
+    if mapped in dict(PayoutRequest.STATUS_CHOICES):
+        payout.status = mapped
+        if mapped == "paid":
+            payout.processed_at = timezone.now()
+
+    meta = payout.meta or {}
+    meta["webhook"] = payload
+    payout.meta = meta
+    payout.save(update_fields=["status", "processed_at", "meta"])
+
+    return JsonResponse({"ok": True})
 

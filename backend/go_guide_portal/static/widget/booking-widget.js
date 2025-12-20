@@ -289,7 +289,12 @@
           const msg = typeof data === "object" ? Object.values(data).flat().join("; ") : "Ошибка бронирования";
           throw new Error(msg);
         }
-        this.showSuccess("Бронирование создано. Мы свяжемся для подтверждения.");
+        const payStatus = (data && data.payment_status) || "pending";
+        const successText =
+          payStatus === "paid"
+            ? "Бронирование и оплата приняты."
+            : `Бронирование создано. Статус оплаты: ${payStatus === "pending" ? "ожидает" : payStatus}.`;
+        this.showSuccess(successText);
         this.form.reset();
         this.handleServiceChange();
       } catch (err) {

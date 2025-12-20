@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.auth import get_user_model
 import secrets
 
 
@@ -66,6 +67,28 @@ class BusinessUnit(models.Model):
         choices=[("bank", "Банковский счет"), ("sbp", "СБП / карта")],
         verbose_name="Способ выплат",
     )
+    payout_provider = models.CharField(
+        max_length=32,
+        default="manual",
+        choices=[
+            ("manual", "Ручной"),
+            ("mock", "Тестовый"),
+            ("yookassa", "YooKassa Payouts"),
+            ("cloudpayments", "CloudPayments Payouts"),
+            ("tinkoff", "Тинькофф Выплаты"),
+        ],
+        verbose_name="Провайдер выплат",
+    )
+    payout_mode = models.CharField(
+        max_length=8,
+        default="test",
+        choices=[("test", "Тест"), ("live", "Боевой")],
+        verbose_name="Режим выплат",
+    )
+    payout_provider_key = models.CharField(max_length=255, blank=True, verbose_name="ID / Public / TerminalKey")
+    payout_provider_secret = models.CharField(max_length=255, blank=True, verbose_name="Secret / API key")
+    payout_webhook_secret = models.CharField(max_length=255, blank=True, verbose_name="Секрет для подписи вебхука")
+    payout_provider_extra = models.JSONField(default=dict, blank=True, verbose_name="Доп. данные провайдера")
 
     def __str__(self):
         return self.name
@@ -73,5 +96,65 @@ class BusinessUnit(models.Model):
     class Meta:
         verbose_name = "Площадка/Бизнес"
         verbose_name_plural = "Площадки/Бизнесы"
+
+
+class PayoutRequest(models.Model):
+    """
+    Запрос на вывод средств (payout) для площадки.
+    """
+
+    STATUS_CHOICES = [
+        ("pending", "На проверке"),
+        ("processing", "В обработке"),
+        ("paid", "Выплачено"),
+        ("failed", "Ошибка"),
+    ]
+
+    PROVIDER_CHOICES = [
+        ("manual", "Ручной"),
+        ("mock", "Тестовый"),
+        ("yookassa", "YooKassa Payouts"),
+        ("cloudpayments", "CloudPayments Payouts"),
+        ("tinkoff", "Тинькофф Выплаты"),
+    ]
+
+    business_unit = models.ForeignKey(
+        BusinessUnit,
+        on_delete=models.CASCADE,
+        related_name="payouts",
+        verbose_name="Площадка",
+    )
+    amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Сумма вывода")
+    fee = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Комиссия")
+    currency = models.CharField(max_length=3, default="RUB", verbose_name="Валюта")
+    status = models.CharField(max_length=16, choices=STATUS_CHOICES, default="pending", verbose_name="Статус")
+    provider = models.CharField(max_length=32, choices=PROVIDER_CHOICES, default="manual", verbose_name="Провайдер")
+    provider_payout_id = models.CharField(max_length=128, blank=True, verbose_name="ID выплаты у провайдера")
+    meta = models.JSONField(default=dict, blank=True, verbose_name="Метаданные/ответ провайдера")
+    comment = models.TextField(blank=True, verbose_name="Комментарий")
+    requested_by = models.ForeignKey(
+        get_user_model(),
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        verbose_name="Инициатор",
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Создано")
+    processed_at = models.DateTimeField(null=True, blank=True, verbose_name="Обработано")
+
+    class Meta:
+        verbose_name = "Выплата"
+        verbose_name_plural = "Выплаты"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Payout #{self.id} — {self.amount} {self.currency}"
+
+    @property
+    def amount_after_fee(self):
+        try:
+            return (self.amount or 0) - (self.fee or 0)
+        except Exception:
+            return self.amount
 
 # Затем: python manage.py makemigrations && python manage.py migrate

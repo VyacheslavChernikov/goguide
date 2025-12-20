@@ -3,7 +3,7 @@ from django.contrib.auth.forms import PasswordChangeForm
 
 from services.models import Service
 from appointments.models import Appointment
-from business_units.models import BusinessUnit
+from business_units.models import BusinessUnit, PayoutRequest
 
 
 class GigaChatSettingsForm(forms.ModelForm):
@@ -154,6 +154,11 @@ class BusinessUnitForm(forms.ModelForm):
             "payout_inn",
             "payout_kpp",
             "payout_name",
+            "payout_provider",
+            "payout_mode",
+            "payout_provider_key",
+            "payout_provider_secret",
+            "payout_webhook_secret",
         ]
         base_input = "w-full px-3 py-2 rounded-lg bg-panel border border-white/10 text-text placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent"
         widgets = {
@@ -197,6 +202,23 @@ class BusinessUnitForm(forms.ModelForm):
             "payout_inn": forms.TextInput(attrs={"class": base_input, "placeholder": "ИНН"}),
             "payout_kpp": forms.TextInput(attrs={"class": base_input, "placeholder": "КПП"}),
             "payout_name": forms.TextInput(attrs={"class": base_input, "placeholder": "Юр. наименование / ФИО"}),
+            "payout_provider": forms.Select(
+                attrs={"class": f"{base_input} pr-8"},
+                choices=[
+                    ("manual", "Ручной"),
+                    ("mock", "Тестовый"),
+                    ("yookassa", "YooKassa"),
+                    ("cloudpayments", "CloudPayments"),
+                    ("tinkoff", "Тинькофф"),
+                ],
+            ),
+            "payout_mode": forms.Select(
+                attrs={"class": f"{base_input} pr-8"},
+                choices=[("test", "Тест"), ("live", "Боевой")],
+            ),
+            "payout_provider_key": forms.TextInput(attrs={"class": base_input, "placeholder": "ShopId/PublicId/TerminalKey"}),
+            "payout_provider_secret": forms.PasswordInput(attrs={"class": base_input, "placeholder": "Secret / API key"}, render_value=True),
+            "payout_webhook_secret": forms.PasswordInput(attrs={"class": base_input, "placeholder": "Секрет подписи вебхука"}, render_value=True),
         }
 
     def __init__(self, *args, **kwargs):
@@ -210,6 +232,17 @@ class BusinessUnitForm(forms.ModelForm):
         self.fields["working_hours_to"].help_text = "Например: 21:00"
         self.fields["checkin_time"].help_text = "Например: 14:00"
         self.fields["checkout_time"].help_text = "Например: 12:00"
+
+
+class PayoutRequestForm(forms.ModelForm):
+    class Meta:
+        model = PayoutRequest
+        fields = ["amount", "comment"]
+        base_input = "w-full px-3 py-2 rounded-lg bg-panel border border-white/10 text-text placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent"
+        widgets = {
+            "amount": forms.NumberInput(attrs={"class": base_input, "step": "0.01", "min": "0", "placeholder": "Например, 5000"}),
+            "comment": forms.Textarea(attrs={"class": f"{base_input} min-h-[80px]", "rows": 3, "placeholder": "Комментарий (необязательно)"}),
+        }
 
 
 class AdminPasswordForm(PasswordChangeForm):

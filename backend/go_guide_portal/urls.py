@@ -13,6 +13,7 @@ urlpatterns = [
     path("dashboard/bookings/<int:pk>/update/", views.booking_update, name="booking_update"),
     path("dashboard/bookings/<int:pk>/delete/", views.booking_delete, name="booking_delete"),
     path("dashboard/bookings/export/", views.bookings_export_csv, name="bookings_export"),
+    path("dashboard/payouts/webhook/", views.payout_webhook, name="payout_webhook"),
     path("dashboard/services/", views.services_view, name="services"),
     path("dashboard/services/create/", views.service_create, name="service_create"),
     path("dashboard/services/<int:pk>/update/", views.service_update, name="service_update"),
