@@ -88,14 +88,13 @@ class AppointmentForm(forms.ModelForm):
 class BusinessUnitForm(forms.ModelForm):
     class Meta:
         model = BusinessUnit
-        fields = ["name", "address", "description", "photo_url", "business_type"]
+        fields = ["name", "address", "description", "photo_url"]
         base_input = "w-full px-3 py-2 rounded-lg bg-panel border border-white/10 text-text placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent"
         widgets = {
             "name": forms.TextInput(attrs={"class": base_input, "required": True}),
             "address": forms.TextInput(attrs={"class": base_input}),
             "description": forms.Textarea(attrs={"class": f"{base_input} min-h-[100px]", "rows": 3}),
             "photo_url": forms.URLInput(attrs={"class": base_input, "placeholder": "https://..."}),
-            "business_type": forms.Select(attrs={"class": f"{base_input} pr-8"}),
         }
 
 
