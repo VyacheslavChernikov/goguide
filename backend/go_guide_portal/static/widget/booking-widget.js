@@ -150,6 +150,7 @@
         this.showError("Не удалось открыть 360-превью");
         return;
       }
+      this.clearMessage();
       this._renderIframe(widget);
       this.previewModal.classList.add("show");
     }
@@ -157,6 +158,7 @@
     closePreview() {
       if (!this.previewModal) return;
       this.previewModal.classList.remove("show");
+      this.clearMessage();
     }
 
     _ensurePreviewHost() {
