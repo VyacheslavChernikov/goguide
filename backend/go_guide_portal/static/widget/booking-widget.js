@@ -270,12 +270,13 @@
     }
 
     showError(text) {
-      if (text && typeof text === "string" && text.includes("innerHTML")) {
-        // не показываем внутрянку про innerHTML пользователю
-        this.messageBox.innerHTML = `<div class="error">Не удалось открыть 360-превью. Попробуйте ещё раз.</div>`;
-      } else {
-        this.messageBox.innerHTML = `<div class="error">${text}</div>`;
+      if (!text) return;
+      if (typeof text === "string" && (text.includes("innerHTML") || text.toLowerCase().includes("превью"))) {
+        // не показываем сервисные предупреждения для превью 360, тихо логируем
+        console.warn("[booking-widget] preview notice:", text);
+        return;
       }
+      this.messageBox.innerHTML = `<div class="error">${text}</div>`;
     }
 
     showSuccess(text) {
