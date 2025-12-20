@@ -268,7 +268,12 @@
     }
 
     showError(text) {
-      this.messageBox.innerHTML = `<div class="error">${text}</div>`;
+      if (text && typeof text === "string" && text.includes("innerHTML")) {
+        // не показываем внутрянку про innerHTML пользователю
+        this.messageBox.innerHTML = `<div class="error">Не удалось открыть 360-превью. Попробуйте ещё раз.</div>`;
+      } else {
+        this.messageBox.innerHTML = `<div class="error">${text}</div>`;
+      }
     }
 
     showSuccess(text) {
