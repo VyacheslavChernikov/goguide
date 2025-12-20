@@ -754,6 +754,7 @@ def booking_create(request):
     if form.is_valid():
         booking = form.save(commit=False)
         booking.business_unit = unit
+        booking.payment_status = "pending"
         # если цена не указана — подставим цену услуги
         if not booking.total_price and booking.service:
             booking.total_price = booking.service.price
@@ -779,6 +780,8 @@ def booking_update(request, pk):
     if form.is_valid():
         obj = form.save(commit=False)
         obj.business_unit = unit
+        if obj.payment_status == "paid":
+            obj.is_confirmed = True
         obj.is_confirmed = obj.status == "confirmed"
         obj.save()
         form.save_m2m()

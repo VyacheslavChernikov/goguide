@@ -31,6 +31,30 @@ class Appointment(models.Model):
     is_confirmed = models.BooleanField(default=False, verbose_name="Подтверждено")
     comment = models.TextField(blank=True, verbose_name="Комментарий")
 
+    PAYMENT_STATUS_CHOICES = [
+        ("pending", "Ожидает оплаты"),
+        ("paid", "Оплачено"),
+        ("failed", "Ошибка оплаты"),
+        ("refunded", "Возврат"),
+    ]
+    payment_status = models.CharField(
+        max_length=16,
+        choices=PAYMENT_STATUS_CHOICES,
+        default="pending",
+        verbose_name="Статус оплаты",
+    )
+    payment_provider = models.CharField(max_length=64, blank=True, verbose_name="Провайдер оплаты")
+    payment_id = models.CharField(max_length=128, blank=True, verbose_name="ID оплаты у провайдера")
+    paid_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name="Оплаченная сумма",
+    )
+    paid_at = models.DateTimeField(null=True, blank=True, verbose_name="Оплачено в")
+    payment_meta = models.JSONField(default=dict, blank=True, verbose_name="Детали оплаты (meta)")
+
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Создано")
 
     class Meta:

@@ -40,6 +40,12 @@ class AppointmentSerializer(serializers.ModelSerializer):
             "end_at",
             "total_price",
             "is_confirmed",
+            "payment_status",
+            "payment_provider",
+            "payment_id",
+            "paid_amount",
+            "paid_at",
+            "payment_meta",
         ]
 
     def validate(self, attrs):
