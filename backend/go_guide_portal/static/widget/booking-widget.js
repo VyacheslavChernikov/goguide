@@ -146,6 +146,10 @@
       const widget = sel.dataset.widget || "";
       if (!widget.trim()) return;
       this._ensurePreviewHost();
+      if (!this.previewModal || !this.previewContent) {
+        this.showError("Не удалось открыть 360-превью");
+        return;
+      }
       this.previewContent.innerHTML = widget;
       this._executeScripts(this.previewContent);
       this.previewModal.classList.add("show");
@@ -199,6 +203,13 @@
       }
       this.previewModal = host;
       this.previewContent = host.querySelector("#booking-widget-preview-content");
+      if (!this.previewContent) {
+        const body = host.querySelector(".body") || host;
+        const fallback = document.createElement("div");
+        fallback.id = "booking-widget-preview-content";
+        body.appendChild(fallback);
+        this.previewContent = fallback;
+      }
     }
 
     async handleSubmit(e) {
