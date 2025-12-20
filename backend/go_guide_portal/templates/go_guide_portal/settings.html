@@ -8,38 +8,50 @@
   </div>
 </div>
 
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-  <div class="bg-panel border border-white/5 rounded-xl p-6">
-    <h3 class="text-lg font-semibold mb-3">Площадка</h3>
-    <form method="post" action="{% url 'settings' %}" class="space-y-4">
-      {% csrf_token %}
-      <input type="hidden" name="save_unit" value="1" />
-      {{ unit_form.widget_config }}
-      <div>
-        <label class="block text-sm mb-1">Название *</label>
-        {{ unit_form.name }}
-      </div>
-      <div>
-        <label class="block text-sm mb-1">Адрес</label>
-        {{ unit_form.address }}
-      </div>
-      <div>
-        <label class="block text-sm mb-1">Телефон</label>
-        {{ unit_form.phone }}
+<div class="bg-panel border border-white/5 rounded-xl p-6">
+  <div class="flex flex-wrap gap-2 mb-4">
+    <button type="button" data-tab-btn="general" class="settings-tab-btn px-3 py-2 rounded-lg border border-white/10 bg-white/10 text-sm font-medium">Общее</button>
+    <button type="button" data-tab-btn="payouts" class="settings-tab-btn px-3 py-2 rounded-lg border border-white/10 bg-white/5 text-sm font-medium">Выплаты</button>
+    <button type="button" data-tab-btn="widget" class="settings-tab-btn px-3 py-2 rounded-lg border border-white/10 bg-white/5 text-sm font-medium">Виджет</button>
+    <button type="button" data-tab-btn="security" class="settings-tab-btn px-3 py-2 rounded-lg border border-white/10 bg-white/5 text-sm font-medium">Безопасность</button>
+  </div>
+
+  <form method="post" action="{% url 'settings' %}" class="space-y-6" id="unitForm">
+    {% csrf_token %}
+    <input type="hidden" name="save_unit" value="1" />
+    {{ unit_form.widget_config }}
+
+    <div data-tab="general" class="settings-tab-content space-y-4">
+      <h3 class="text-lg font-semibold">Площадка</h3>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        <div>
+          <label class="block text-sm mb-1">Название *</label>
+          {{ unit_form.name }}
+        </div>
+        <div>
+          <label class="block text-sm mb-1">Адрес</label>
+          {{ unit_form.address }}
+        </div>
       </div>
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        <div>
+          <label class="block text-sm mb-1">Телефон</label>
+          {{ unit_form.phone }}
+        </div>
         <div>
           <label class="block text-sm mb-1">E-mail</label>
           {{ unit_form.email }}
         </div>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
         <div>
           <label class="block text-sm mb-1">Сайт</label>
           {{ unit_form.website }}
         </div>
-      </div>
-      <div>
-        <label class="block text-sm mb-1">Соцсети/ссылки</label>
-        {{ unit_form.socials }}
+        <div>
+          <label class="block text-sm mb-1">Соцсети/ссылки</label>
+          {{ unit_form.socials }}
+        </div>
       </div>
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
         <div>
@@ -71,13 +83,15 @@
           {{ unit_form.wifi_info }}
         </div>
       </div>
-      <div>
-        <label class="block text-sm mb-1">Питание</label>
-        {{ unit_form.meals_info }}
-      </div>
-      <div>
-        <label class="block text-sm mb-1">Детская политика/опции</label>
-        {{ unit_form.kids_policy }}
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        <div>
+          <label class="block text-sm mb-1">Питание</label>
+          {{ unit_form.meals_info }}
+        </div>
+        <div>
+          <label class="block text-sm mb-1">Детская политика/опции</label>
+          {{ unit_form.kids_policy }}
+        </div>
       </div>
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
         <div>
@@ -117,40 +131,6 @@
           {{ unit_form.portal_theme }}
         </div>
       </div>
-      <div class="mt-4 border-t border-white/10 pt-4 space-y-3">
-        <h4 class="text-md font-semibold">Реквизиты для выплат</h4>
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
-          <div>
-            <label class="block text-sm mb-1">Способ выплат</label>
-            {{ unit_form.payout_method }}
-          </div>
-          <div>
-            <label class="block text-sm mb-1">Р/с или карта (СБП)</label>
-            {{ unit_form.payout_account }}
-          </div>
-          <div>
-            <label class="block text-sm mb-1">Банк</label>
-            {{ unit_form.payout_bank }}
-          </div>
-          <div>
-            <label class="block text-sm mb-1">БИК</label>
-            {{ unit_form.payout_bik }}
-          </div>
-          <div>
-            <label class="block text-sm mb-1">ИНН</label>
-            {{ unit_form.payout_inn }}
-          </div>
-          <div>
-            <label class="block text-sm mb-1">КПП</label>
-            {{ unit_form.payout_kpp }}
-          </div>
-          <div class="lg:col-span-2">
-            <label class="block text-sm mb-1">Юр. наименование / ФИО</label>
-            {{ unit_form.payout_name }}
-          </div>
-        </div>
-        <p class="text-xs text-muted">Эти реквизиты будут использоваться для будущих выплат (payouts) после подключения провайдера.</p>
-      </div>
       <div>
         <label class="block text-sm mb-1">Описание</label>
         {{ unit_form.description }}
@@ -169,11 +149,137 @@
       <div class="flex justify-end">
         <button type="submit" class="px-4 py-2 rounded-lg bg-accent text-bg font-medium hover:bg-accent/80 transition">Сохранить</button>
       </div>
-    </form>
-  </div>
+    </div>
 
-  <div class="bg-panel border border-white/5 rounded-xl p-6">
-    <h3 class="text-lg font-semibold mb-3">Безопасность</h3>
+    <div data-tab="payouts" class="settings-tab-content space-y-4 hidden">
+      <h3 class="text-lg font-semibold">Реквизиты для выплат</h3>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        <div>
+          <label class="block text-sm mb-1">Способ выплат</label>
+          {{ unit_form.payout_method }}
+        </div>
+        <div>
+          <label class="block text-sm mb-1">Р/с или карта (СБП)</label>
+          {{ unit_form.payout_account }}
+        </div>
+        <div>
+          <label class="block text-sm mb-1">Банк</label>
+          {{ unit_form.payout_bank }}
+        </div>
+        <div>
+          <label class="block text-sm mb-1">БИК</label>
+          {{ unit_form.payout_bik }}
+        </div>
+        <div>
+          <label class="block text-sm mb-1">ИНН</label>
+          {{ unit_form.payout_inn }}
+        </div>
+        <div>
+          <label class="block text-sm mb-1">КПП</label>
+          {{ unit_form.payout_kpp }}
+        </div>
+        <div class="lg:col-span-2">
+          <label class="block text-sm mb-1">Юр. наименование / ФИО</label>
+          {{ unit_form.payout_name }}
+        </div>
+      </div>
+      <p class="text-xs text-muted">Эти реквизиты будут использоваться для будущих выплат (payouts) после подключения провайдера.</p>
+      <div class="flex justify-end">
+        <button type="submit" class="px-4 py-2 rounded-lg bg-accent text-bg font-medium hover:bg-accent/80 transition">Сохранить</button>
+      </div>
+    </div>
+
+    <div data-tab="widget" class="settings-tab-content space-y-6 hidden">
+      <div class="border border-white/10 rounded-lg p-4">
+        <h4 class="text-md font-semibold mb-2">Виджет бронирования (готовый код)</h4>
+        <p class="text-sm text-muted mb-2">Скопируйте и вставьте на сайт клиента. Бизнес ID подставлен автоматически.</p>
+        <div class="space-y-2">
+          <textarea readonly class="w-full px-3 py-2 rounded-lg bg-panel border border-white/10 text-text font-mono text-xs min-h-[120px]" id="embedCode">{{ embed_code }}</textarea>
+          <div class="flex justify-end">
+            <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('embedCode').value)" class="px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-sm">Скопировать</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="border border-white/10 rounded-lg p-4 space-y-3" id="widget-configurator">
+        <h4 class="text-md font-semibold">Настройка виджета (цвета и тексты)</h4>
+        <div class="grid grid-cols-2 gap-3 text-sm">
+          <label class="space-y-1">
+            <span class="text-muted">Тема</span>
+            <select id="presetTheme" class="w-full px-3 py-2 rounded-lg bg-panel border border-white/10 text-text">
+              <option value="">Custom</option>
+              <option value="dark">Dark</option>
+              <option value="light">Light</option>
+            </select>
+          </label>
+          <label class="space-y-1">
+            <span class="text-muted">Ширина карточки</span>
+            <input type="text" id="cfgWidth" class="w-full px-3 py-2 rounded-lg bg-panel border border-white/10 text-text" placeholder="например, 420px или 100%">
+          </label>
+          <label class="space-y-1">
+            <span class="text-muted">Фон</span>
+            <input type="color" id="cfgPrimary" class="w-full h-10 bg-panel border border-white/10 rounded-lg">
+          </label>
+          <label class="space-y-1">
+            <span class="text-muted">Фон полей</span>
+            <input type="color" id="cfgPanel" class="w-full h-10 bg-panel border border-white/10 rounded-lg">
+          </label>
+          <label class="space-y-1">
+            <span class="text-muted">Акцент</span>
+            <input type="color" id="cfgAccent" class="w-full h-10 bg-panel border border-white/10 rounded-lg">
+          </label>
+          <label class="space-y-1">
+            <span class="text-muted">Текст</span>
+            <input type="color" id="cfgText" class="w-full h-10 bg-panel border border-white/10 rounded-lg">
+          </label>
+          <label class="space-y-1">
+            <span class="text-muted">Подсказки</span>
+            <input type="color" id="cfgMuted" class="w-full h-10 bg-panel border border-white/10 rounded-lg">
+          </label>
+          <label class="space-y-1">
+            <span class="text-muted">Граница</span>
+            <input type="color" id="cfgBorder" class="w-full h-10 bg-panel border border-white/10 rounded-lg">
+          </label>
+          <label class="space-y-1">
+            <span class="text-muted">Скругление</span>
+            <input type="text" id="cfgRadius" class="w-full px-3 py-2 rounded-lg bg-panel border border-white/10 text-text" placeholder="12px">
+          </label>
+          <label class="space-y-1">
+            <span class="text-muted">Шрифт</span>
+            <input type="text" id="cfgFont" class="w-full px-3 py-2 rounded-lg bg-panel border border-white/10 text-text" placeholder="'Inter', sans-serif">
+          </label>
+          <label class="space-y-1">
+            <span class="text-muted">Высота 360</span>
+            <input type="text" id="cfgPreviewHeight" class="w-full px-3 py-2 rounded-lg bg-panel border border-white/10 text-text" placeholder="70vh">
+          </label>
+          <label class="space-y-1 col-span-2">
+            <span class="text-muted">Текст кнопки</span>
+            <input type="text" id="cfgSubmit" class="w-full px-3 py-2 rounded-lg bg-panel border border-white/10 text-text" placeholder="Забронировать">
+          </label>
+        </div>
+        <div class="flex gap-3 items-center">
+          <label class="flex items-center gap-2 text-sm">
+            <input type="checkbox" id="cfgHideEmail" class="h-4 w-4 text-accent border-white/20 rounded">
+            <span class="text-muted">Скрыть email</span>
+          </label>
+          <label class="flex items-center gap-2 text-sm">
+            <input type="checkbox" id="cfgAutoOpen" class="h-4 w-4 text-accent border-white/20 rounded">
+            <span class="text-muted">Авто-открывать 360</span>
+          </label>
+        </div>
+        <div class="flex gap-3 items-center">
+          <button type="button" id="cfgApply" class="px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-sm">Применить</button>
+          <span class="text-xs text-muted">Изменения сохранятся вместе с площадкой.</span>
+        </div>
+      </div>
+
+      <div class="flex justify-end">
+        <button type="submit" class="px-4 py-2 rounded-lg bg-accent text-bg font-medium hover:bg-accent/80 transition">Сохранить</button>
+      </div>
+    </div>
+  </form>
+
+  <div data-tab="security" class="settings-tab-content space-y-4 hidden">
     <form method="post" action="{% url 'settings' %}" class="space-y-4">
       {% csrf_token %}
       <input type="hidden" name="change_password" value="1" />
@@ -193,89 +299,6 @@
         <button type="submit" class="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20">Сменить пароль</button>
       </div>
     </form>
-
-    <div class="mt-8 border-t border-white/10 pt-5">
-      <h4 class="text-md font-semibold mb-2">Виджет бронирования (готовый код)</h4>
-      <p class="text-sm text-muted mb-2">Скопируйте и вставьте на сайт клиента. Бизнес ID подставлен автоматически.</p>
-      <div class="space-y-2">
-        <textarea readonly class="w-full px-3 py-2 rounded-lg bg-panel border border-white/10 text-text font-mono text-xs min-h-[120px]" id="embedCode">{{ embed_code }}</textarea>
-        <div class="flex justify-end">
-          <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('embedCode').value)" class="px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-sm">Скопировать</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="mt-8 border-t border-white/10 pt-5 space-y-3" id="widget-configurator">
-      <h4 class="text-md font-semibold">Настройка виджета (цвета и тексты)</h4>
-      <div class="grid grid-cols-2 gap-3 text-sm">
-        <label class="space-y-1">
-          <span class="text-muted">Тема</span>
-          <select id="presetTheme" class="w-full px-3 py-2 rounded-lg bg-panel border border-white/10 text-text">
-            <option value="">Custom</option>
-            <option value="dark">Dark</option>
-            <option value="light">Light</option>
-          </select>
-        </label>
-        <label class="space-y-1">
-          <span class="text-muted">Ширина карточки</span>
-          <input type="text" id="cfgWidth" class="w-full px-3 py-2 rounded-lg bg-panel border border-white/10 text-text" placeholder="например, 420px или 100%">
-        </label>
-        <label class="space-y-1">
-          <span class="text-muted">Фон</span>
-          <input type="color" id="cfgPrimary" class="w-full h-10 bg-panel border border-white/10 rounded-lg">
-        </label>
-        <label class="space-y-1">
-          <span class="text-muted">Фон полей</span>
-          <input type="color" id="cfgPanel" class="w-full h-10 bg-panel border border-white/10 rounded-lg">
-        </label>
-        <label class="space-y-1">
-          <span class="text-muted">Акцент</span>
-          <input type="color" id="cfgAccent" class="w-full h-10 bg-panel border border-white/10 rounded-lg">
-        </label>
-        <label class="space-y-1">
-          <span class="text-muted">Текст</span>
-          <input type="color" id="cfgText" class="w-full h-10 bg-panel border border-white/10 rounded-lg">
-        </label>
-        <label class="space-y-1">
-          <span class="text-muted">Подсказки</span>
-          <input type="color" id="cfgMuted" class="w-full h-10 bg-panel border border-white/10 rounded-lg">
-        </label>
-        <label class="space-y-1">
-          <span class="text-muted">Граница</span>
-          <input type="color" id="cfgBorder" class="w-full h-10 bg-panel border border-white/10 rounded-lg">
-        </label>
-        <label class="space-y-1">
-          <span class="text-muted">Скругление</span>
-          <input type="text" id="cfgRadius" class="w-full px-3 py-2 rounded-lg bg-panel border border-white/10 text-text" placeholder="12px">
-        </label>
-        <label class="space-y-1">
-          <span class="text-muted">Шрифт</span>
-          <input type="text" id="cfgFont" class="w-full px-3 py-2 rounded-lg bg-panel border border-white/10 text-text" placeholder="'Inter', sans-serif">
-        </label>
-        <label class="space-y-1">
-          <span class="text-muted">Высота 360</span>
-          <input type="text" id="cfgPreviewHeight" class="w-full px-3 py-2 rounded-lg bg-panel border border-white/10 text-text" placeholder="70vh">
-        </label>
-        <label class="space-y-1 col-span-2">
-          <span class="text-muted">Текст кнопки</span>
-          <input type="text" id="cfgSubmit" class="w-full px-3 py-2 rounded-lg bg-panel border border-white/10 text-text" placeholder="Забронировать">
-        </label>
-      </div>
-      <div class="flex gap-3 items-center">
-        <label class="flex items-center gap-2 text-sm">
-          <input type="checkbox" id="cfgHideEmail" class="h-4 w-4 text-accent border-white/20 rounded">
-          <span class="text-muted">Скрыть email</span>
-        </label>
-        <label class="flex items-center gap-2 text-sm">
-          <input type="checkbox" id="cfgAutoOpen" class="h-4 w-4 text-accent border-white/20 rounded">
-          <span class="text-muted">Авто-открывать 360</span>
-        </label>
-      </div>
-      <div class="flex gap-3 items-center">
-        <button type="button" id="cfgApply" class="px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-sm">Применить</button>
-        <span class="text-xs text-muted">Изменения сохранятся вместе с площадкой.</span>
-      </div>
-    </div>
   </div>
 </div>
 {% endblock %}
@@ -283,5 +306,34 @@
 {% block extra_js %}
   <script src="{% static 'widget/widget-presets.js' %}"></script>
   <script src="{% static 'widget/configurator.js' %}"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const tabButtons = document.querySelectorAll('.settings-tab-btn');
+      const tabContents = document.querySelectorAll('.settings-tab-content');
+
+      const activateTab = (name) => {
+        tabContents.forEach((content) => {
+          content.classList.toggle('hidden', content.dataset.tab !== name);
+        });
+        tabButtons.forEach((btn) => {
+          const isActive = btn.dataset.tabBtn === name;
+          btn.classList.toggle('bg-accent', isActive);
+          btn.classList.toggle('text-bg', isActive);
+          btn.classList.toggle('border-accent', isActive);
+          btn.classList.toggle('bg-white/10', !isActive);
+          btn.classList.toggle('bg-white/5', !isActive);
+        });
+      };
+
+      tabButtons.forEach((btn) => {
+        btn.addEventListener('click', () => activateTab(btn.dataset.tabBtn));
+      });
+
+      // Активируем первую вкладку по умолчанию
+      if (tabButtons.length) {
+        activateTab(tabButtons[0].dataset.tabBtn);
+      }
+    });
+  </script>
 {% endblock %}
 
