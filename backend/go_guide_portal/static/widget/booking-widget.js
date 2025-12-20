@@ -150,6 +150,8 @@
         this.showError("Не удалось открыть 360-превью");
         return;
       }
+      // Перерисовываем виджет каждый раз, чтобы скрипты заново инициализировались
+      this.previewContent.innerHTML = "";
       this.previewContent.innerHTML = widget;
       this._executeScripts(this.previewContent);
       this.previewModal.classList.add("show");
@@ -165,7 +167,10 @@
       scripts.forEach((old) => {
         const s = document.createElement("script");
         if (old.src) {
-          s.src = old.src;
+          // добавляем cache-busting, чтобы loader выполнялся повторно
+          const url = new URL(old.src, window.location.href);
+          url.searchParams.set("_ts", Date.now().toString());
+          s.src = url.toString();
         } else {
           s.textContent = old.textContent || "";
         }
