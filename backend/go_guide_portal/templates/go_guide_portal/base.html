@@ -22,11 +22,11 @@
       --accent2: #FE7B54;
     }
     body.theme-light {
-      --bg: #f8fafc;
+      --bg: #f5f7fb;
       --panel: #ffffff;
-      --text: #111827;
+      --text: #0f172a;
       --muted: #4b5563;
-      --border: #d5d9e2;
+      --border: #e5e7eb;
       --accent: #2563eb;
       --accent2: #2563eb;
     }
@@ -40,6 +40,45 @@
     .bg-accent { background: var(--accent); }
     .text-accent { color: var(--accent); }
     .bg-accent2 { background: var(--accent2); }
+    /* Light theme polish */
+    body.theme-light .border-white\/5,
+    body.theme-light .border-white\/10 {
+      border-color: var(--border);
+    }
+    body.theme-light .shadow,
+    body.theme-light .card,
+    body.theme-light .panel {
+      box-shadow: 0 8px 24px rgba(15,23,42,0.08);
+    }
+    body.theme-light .sidebar,
+    body.theme-light nav,
+    body.theme-light aside {
+      background: #ffffff;
+      color: var(--text);
+      border-right: 1px solid var(--border);
+    }
+    body.theme-light .sidebar a,
+    body.theme-light nav a {
+      color: var(--text);
+    }
+    body.theme-light .sidebar a:hover,
+    body.theme-light nav a:hover {
+      color: var(--accent);
+    }
+    body.theme-light table,
+    body.theme-light th,
+    body.theme-light td {
+      background: #ffffff;
+      color: var(--text);
+      border-color: var(--border);
+    }
+    body.theme-light input,
+    body.theme-light select,
+    body.theme-light textarea {
+      background: #ffffff;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
   </style>
 </head>
 <body class="bg-bg text-text min-h-screen {% if current_unit and current_unit.portal_theme == 'light' %}theme-light{% else %}theme-dark{% endif %}">
