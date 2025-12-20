@@ -52,6 +52,7 @@ class BusinessUnit(models.Model):
     gigachat_key = models.TextField(blank=True, null=True, verbose_name="GigaChat Auth Key")  # legacy
     alice_key = models.TextField(blank=True, null=True, verbose_name="Yandex Alice API Key")
     widget_config = models.JSONField(default=dict, blank=True, verbose_name="Настройки виджета бронирования")
+    portal_theme = models.CharField(max_length=16, default="dark", verbose_name="Тема портала (dark/light)")
 
     def __str__(self):
         return self.name
