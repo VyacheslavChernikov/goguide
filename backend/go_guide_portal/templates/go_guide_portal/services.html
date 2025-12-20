@@ -2,33 +2,206 @@
 {% block content %}
 <div class="bg-panel rounded-xl p-6 border border-white/5">
   <div class="flex items-center justify-between mb-4">
-    <h3 class="text-xl font-semibold">{{ page_title|default:"Услуги" }}</h3>
-    <a href="#" class="px-4 py-2 rounded-lg border border-accent text-bg bg-accent hover:bg-accent/80">+ Добавить</a>
+    <div>
+      <h3 class="text-xl font-semibold">{{ page_title|default:"Услуги" }}</h3>
+      <p class="text-muted text-sm">Добавляйте позиции, управляйте публикацией и ценой</p>
+    </div>
+    <div class="flex items-center space-x-2">
+      <button id="openCreateService" class="px-4 py-2 rounded-lg bg-accent text-bg font-medium hover:bg-accent/80 transition">
+        + Добавить
+      </button>
+    </div>
   </div>
+
+  {% if services %}
   <div class="overflow-x-auto">
     <table class="min-w-full text-sm">
       <thead class="text-muted">
         <tr class="border-b border-white/5">
-          <th class="text-left py-2">Название</th>
-          <th class="text-left py-2">Тип</th>
-          <th class="text-left py-2">Цена</th>
-          <th class="text-left py-2">Доступна</th>
+          <th class="text-left py-2 px-2">Название</th>
+          <th class="text-left py-2 px-2">Тип</th>
+          <th class="text-left py-2 px-2">Цена</th>
+          <th class="text-left py-2 px-2">Доступна</th>
+          <th class="text-left py-2 px-2">Действия</th>
         </tr>
       </thead>
       <tbody>
         {% for srv in services %}
         <tr class="border-b border-white/5">
-          <td class="py-2">{{ srv.title }}</td>
-          <td class="py-2">{{ srv.service_type }}</td>
-          <td class="py-2">{{ srv.price }} ₽</td>
-          <td class="py-2">{% if srv.is_available %}Да{% else %}Нет{% endif %}</td>
+          <td class="py-2 px-2 font-medium">
+            {{ srv.title }}
+            {% if srv.description %}<div class="text-muted text-xs">{{ srv.description|truncatechars:80 }}</div>{% endif %}
+          </td>
+          <td class="py-2 px-2 text-muted">{{ srv.service_type }}</td>
+          <td class="py-2 px-2">{{ srv.price }} ₽</td>
+          <td class="py-2 px-2">
+            {% if srv.is_available %}
+              <span class="px-2 py-1 rounded bg-green-500/20 text-green-200 text-xs">Опубликована</span>
+            {% else %}
+              <span class="px-2 py-1 rounded bg-red-500/20 text-red-200 text-xs">Скрыта</span>
+            {% endif %}
+          </td>
+          <td class="py-2 px-2 space-x-2 whitespace-nowrap">
+            <button
+              class="px-3 py-1.5 text-xs rounded-lg bg-white/10 hover:bg-white/20 transition edit-service"
+              data-id="{{ srv.id }}"
+              data-title="{{ srv.title|escape }}"
+              data-type="{{ srv.service_type }}"
+              data-price="{{ srv.price|default_if_none:0|floatformat:'-2' }}"
+              data-description="{{ srv.description|default_if_none:''|escape }}"
+              data-photo="{{ srv.photo_url|default_if_none:''|escape }}"
+              data-available="{{ srv.is_available|yesno:'true,false' }}"
+              data-update-url="{% url 'service_update' srv.id %}"
+            >Редактировать</button>
+            <form action="{% url 'service_duplicate' srv.id %}" method="post" class="inline">
+              {% csrf_token %}
+              <button type="submit" class="px-3 py-1.5 text-xs rounded-lg bg-white/10 hover:bg-white/20 transition">Дублировать</button>
+            </form>
+            <form action="{% url 'service_delete' srv.id %}" method="post" class="inline">
+              {% csrf_token %}
+              <button type="submit" onclick="return confirm('Удалить услугу?')" class="px-3 py-1.5 text-xs rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-100 transition">Удалить</button>
+            </form>
+          </td>
         </tr>
-        {% empty %}
-        <tr><td colspan="4" class="py-3 text-muted">Услуг нет</td></tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
+  {% else %}
+  <div class="border border-dashed border-white/10 rounded-xl p-6 text-center text-muted">
+    {{ page_title|default:"Услуги" }} ещё не добавлены. Нажмите «Добавить», чтобы создать первую.
+  </div>
+  {% endif %}
 </div>
+
+<!-- Create modal -->
+<div id="createServiceModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-40 hidden">
+  <div class="bg-panel border border-white/10 rounded-xl w-full max-w-4xl p-6 relative">
+    <button class="absolute top-3 right-3 text-muted hover:text-text" data-close aria-label="Закрыть">×</button>
+    <h3 class="text-xl font-semibold mb-4">Новая услуга</h3>
+    <form action="{% url 'service_create' %}" method="post" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {% csrf_token %}
+      <div class="md:col-span-2">
+        <label class="block text-sm mb-1">Название *</label>
+        {{ form.title }}
+      </div>
+      <div>
+        <label class="block text-sm mb-1">Категория/тип</label>
+        {{ form.service_type }}
+      </div>
+      <div>
+        <label class="block text-sm mb-1">Цена</label>
+        {{ form.price }}
+      </div>
+      <div class="md:col-span-2">
+        <label class="block text-sm mb-1">Описание</label>
+        {{ form.description }}
+      </div>
+      <div class="md:col-span-2">
+        <label class="block text-sm mb-1">URL фото</label>
+        {{ form.photo_url }}
+      </div>
+      <div class="flex items-center space-x-2">
+        {{ form.is_available }}
+        <span class="text-sm">Опубликовать сразу</span>
+      </div>
+      <div class="md:col-span-2 flex justify-end space-x-3 pt-2">
+        <button type="button" data-close class="px-4 py-2 rounded-lg border border-white/10 hover:bg-white/5">Отмена</button>
+        <button type="submit" name="save_add_another" value="1" class="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20">Сохранить и добавить ещё</button>
+        <button type="submit" class="px-4 py-2 rounded-lg bg-accent text-bg font-medium hover:bg-accent/80 transition">Сохранить</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Edit modal -->
+<div id="editServiceModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-40 hidden">
+  <div class="bg-panel border border-white/10 rounded-xl w-full max-w-4xl p-6 relative">
+    <button class="absolute top-3 right-3 text-muted hover:text-text" data-close aria-label="Закрыть">×</button>
+    <h3 class="text-xl font-semibold mb-4">Редактировать услугу</h3>
+    <form id="editServiceForm" action="#" method="post" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {% csrf_token %}
+      <div class="md:col-span-2">
+        <label class="block text-sm mb-1">Название *</label>
+        <input type="text" name="title" id="editServiceTitle" required class="w-full px-3 py-2 rounded-lg bg-panel border border-white/10 text-text placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent" />
+      </div>
+      <div>
+        <label class="block text-sm mb-1">Категория/тип</label>
+        <select name="service_type" id="editServiceType" class="w-full px-3 py-2 rounded-lg bg-panel border border-white/10 text-text focus:outline-none focus:ring-2 focus:ring-accent">
+          {% for value,label in service_types %}
+            <option value="{{ value }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm mb-1">Цена</label>
+        <input type="number" step="0.01" min="0" name="price" id="editServicePrice" class="w-full px-3 py-2 rounded-lg bg-panel border border-white/10 text-text placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent" />
+      </div>
+      <div class="md:col-span-2">
+        <label class="block text-sm mb-1">Описание</label>
+        <textarea name="description" id="editServiceDescription" rows="3" class="w-full px-3 py-2 rounded-lg bg-panel border border-white/10 text-text placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent"></textarea>
+      </div>
+      <div class="md:col-span-2">
+        <label class="block text-sm mb-1">URL фото</label>
+        <input type="url" name="photo_url" id="editServicePhoto" class="w-full px-3 py-2 rounded-lg bg-panel border border-white/10 text-text placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent" />
+      </div>
+      <div class="flex items-center space-x-2">
+        <input type="checkbox" name="is_available" id="editServiceAvailable" class="h-4 w-4 text-accent border-white/20 rounded" />
+        <span class="text-sm">Опубликована</span>
+      </div>
+      <div class="md:col-span-2 flex justify-end space-x-3 pt-2">
+        <button type="button" data-close class="px-4 py-2 rounded-lg border border-white/10 hover:bg-white/5">Отмена</button>
+        <button type="submit" class="px-4 py-2 rounded-lg bg-accent text-bg font-medium hover:bg-accent/80 transition">Сохранить</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  (function() {
+    const openCreate = document.getElementById('openCreateService');
+    const createModal = document.getElementById('createServiceModal');
+    const editModal = document.getElementById('editServiceModal');
+    const editForm = document.getElementById('editServiceForm');
+
+    const toggle = (el, show) => {
+      if (!el) return;
+      el.classList.toggle('hidden', !show);
+    };
+
+    if (openCreate && createModal) {
+      openCreate.addEventListener('click', () => toggle(createModal, true));
+    }
+
+    document.querySelectorAll('[data-close]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        toggle(createModal, false);
+        toggle(editModal, false);
+      });
+    });
+
+    document.querySelectorAll('.edit-service').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const d = btn.dataset;
+        if (!editForm) return;
+        editForm.action = d.updateUrl;
+        document.getElementById('editServiceTitle').value = d.title || '';
+        document.getElementById('editServiceType').value = d.type || '';
+        document.getElementById('editServicePrice').value = d.price || '';
+        document.getElementById('editServiceDescription').value = d.description || '';
+        document.getElementById('editServicePhoto').value = d.photo || '';
+        document.getElementById('editServiceAvailable').checked = d.available === 'true';
+        toggle(editModal, true);
+      });
+    });
+
+    [createModal, editModal].forEach(modal => {
+      if (!modal) return;
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) toggle(modal, false);
+      });
+    });
+  })();
+</script>
 {% endblock %}
 

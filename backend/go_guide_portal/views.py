@@ -26,6 +26,7 @@ from go_guide_portal.forms import (
     AdminPasswordForm,
     GigaChatSettingsForm,
 )
+from go_guide_portal.navigation import get_ui_texts, get_dashboard_labels
 from bot.gigachat_ai import ask_gigachat, get_gigachat_access_token
 
 # Грузим .env из корня проекта и из backend (рядом с manage.py) — чтобы работало в обоих кейсах
@@ -328,6 +329,9 @@ def dashboard(request):
 
     recent_appointments = Appointment.objects.filter(business_unit=unit).order_by('-created_at')[:5]
 
+    ui_texts = get_ui_texts(unit)
+    dashboard_labels = get_dashboard_labels(ui_texts)
+
     context = {
         "unit": unit,
         "user_name": request.user.get_full_name() or request.user.username,
@@ -339,6 +343,8 @@ def dashboard(request):
         "occupancy_data": json.dumps([]),
         "unread_notifications": recent_appointments,
         "unread_count": recent_appointments.count(),
+        "ui_texts": ui_texts,
+        "dashboard_labels": dashboard_labels,
     }
     return render(request, "go_guide_portal/dashboard.html", context)
 
@@ -359,16 +365,95 @@ def services_view(request):
     if not unit:
         messages.error(request, "Вы не привязаны к площадке.")
         return redirect("go_guide_dashboard")
+    ui_texts = get_ui_texts(unit)
     services = Service.objects.filter(business_unit=unit)
     form = ServiceForm()
     context = {
         "services": services,
         "unit": unit,
-        "page_title": "Услуги",
+        "page_title": ui_texts.get("service_title", "Услуги"),
         "form": form,
         "service_types": Service.ROOM_TYPES,
+        "ui_texts": ui_texts,
     }
     return render(request, "go_guide_portal/services.html", context)
+
+
+@login_required
+def service_create(request):
+    unit = _get_user_unit(request.user)
+    if not unit:
+        messages.error(request, "Вы не привязаны к площадке.")
+        return redirect("go_guide_dashboard")
+    if request.method != "POST":
+        return redirect("services")
+
+    form = ServiceForm(request.POST)
+    if form.is_valid():
+        obj = form.save(commit=False)
+        obj.business_unit = unit
+        obj.save()
+        messages.success(request, "Услуга создана.")
+        if "save_add_another" in request.POST:
+            return redirect("services")
+    else:
+        messages.error(request, "Исправьте ошибки формы.")
+    return redirect("services")
+
+
+@login_required
+def service_update(request, pk):
+    unit = _get_user_unit(request.user)
+    if not unit:
+        messages.error(request, "Вы не привязаны к площадке.")
+        return redirect("go_guide_dashboard")
+    service = get_object_or_404(Service, pk=pk, business_unit=unit)
+    if request.method != "POST":
+        return redirect("services")
+
+    form = ServiceForm(request.POST, instance=service)
+    if form.is_valid():
+        form.save()
+        messages.success(request, "Услуга обновлена.")
+    else:
+        messages.error(request, "Исправьте ошибки формы.")
+    return redirect("services")
+
+
+@login_required
+def service_delete(request, pk):
+    unit = _get_user_unit(request.user)
+    if not unit:
+        messages.error(request, "Вы не привязаны к площадке.")
+        return redirect("go_guide_dashboard")
+    service = get_object_or_404(Service, pk=pk, business_unit=unit)
+    if request.method == "POST":
+        service.delete()
+        messages.success(request, "Услуга удалена.")
+    return redirect("services")
+
+
+@login_required
+def service_duplicate(request, pk):
+    unit = _get_user_unit(request.user)
+    if not unit:
+        messages.error(request, "Вы не привязаны к площадке.")
+        return redirect("go_guide_dashboard")
+    service = get_object_or_404(Service, pk=pk, business_unit=unit)
+    if request.method != "POST":
+        return redirect("services")
+    dup = Service(
+        business_unit=unit,
+        title=f"{service.title} (копия)",
+        service_type=service.service_type,
+        price=service.price,
+        description=service.description,
+        is_available=service.is_available,
+        photo_url=service.photo_url,
+    )
+    dup.save()
+    messages.success(request, "Услуга продублирована.")
+    return redirect("services")
 
 
 @login_required
@@ -380,14 +465,16 @@ def rooms_view(request):
     if not unit:
         messages.error(request, "Вы не привязаны к площадке.")
         return redirect("go_guide_dashboard")
+    ui_texts = get_ui_texts(unit)
     services = Service.objects.filter(business_unit=unit)
     form = ServiceForm()
     context = {
         "services": services,
         "unit": unit,
-        "page_title": "Номера",
+        "page_title": ui_texts.get("service_title", "Номера"),
         "form": form,
         "service_types": Service.ROOM_TYPES,
+        "ui_texts": ui_texts,
     }
     return render(request, "go_guide_portal/rooms.html", context)
 
@@ -448,11 +535,14 @@ def appointments_view(request):
     if not unit:
         messages.error(request, "Вы не привязаны к площадке.")
         return redirect("go_guide_dashboard")
+    ui_texts = get_ui_texts(unit)
     apps_qs = Appointment.objects.filter(business_unit=unit).order_by('-created_at')
     context = {
         "appointments": apps_qs,
         "unit": unit,
-        "page_title": "Записи",
+        "page_title": ui_texts.get("booking_title", "Записи"),
+        "service_label": ui_texts.get("service_singular", "Услуга"),
+        "ui_texts": ui_texts,
     }
     return render(request, "go_guide_portal/appointments.html", context)
 
@@ -466,6 +556,7 @@ def bookings_view(request):
     if not unit:
         messages.error(request, "Вы не привязаны к площадке.")
         return redirect("go_guide_dashboard")
+    ui_texts = get_ui_texts(unit)
     queryset = Appointment.objects.filter(business_unit=unit).order_by('-created_at')
 
     status = request.GET.get("status", "all")
@@ -505,12 +596,14 @@ def bookings_view(request):
     context = {
         "appointments": queryset,
         "unit": unit,
-        "page_title": "Бронирования",
+        "page_title": ui_texts.get("booking_title", "Бронирования"),
+        "service_label": ui_texts.get("service_singular", "Услуга"),
         "form": form,
         "statuses": Appointment.STATUS_CHOICES,
         "current_status": status,
         "date_from": date_from,
         "date_to": date_to,
+        "ui_texts": ui_texts,
     }
     return render(request, "go_guide_portal/bookings.html", context)
 
@@ -611,6 +704,7 @@ def ai_assistant_view(request):
     if not unit:
         messages.error(request, "Вы не привязаны к площадке.")
         return redirect("go_guide_dashboard")
+    ui_texts = get_ui_texts(unit)
 
     # сохранение ключей
     if request.method == "POST" and "save_ai" in request.POST:
@@ -632,6 +726,7 @@ def ai_assistant_view(request):
         "gigachat_key": unit.gigachat_auth_key or unit.gigachat_key or "",
         "alice_key": unit.alice_key or "",
         "chat_history": chat_history,
+        "ui_texts": ui_texts,
     }
     return render(request, "go_guide_portal/ai_assistant.html", context)
 
@@ -833,6 +928,7 @@ def analytics_view(request):
     if not unit:
         messages.error(request, "Вы не привязаны к площадке.")
         return redirect("go_guide_dashboard")
+    ui_texts = get_ui_texts(unit)
 
     bookings = Appointment.objects.filter(business_unit=unit)
     confirmed = bookings.filter(status="confirmed")
@@ -883,6 +979,7 @@ def analytics_view(request):
         "revenue_chart": json.dumps(revenue_chart),
         "weekday_stats": weekday_stats,
         "top_rooms": top_rooms,
+        "ui_texts": ui_texts,
     }
     return render(request, "go_guide_portal/analytics.html", context)
 
@@ -930,6 +1027,7 @@ def tours_view(request):
     if not unit:
         messages.error(request, "Вы не привязаны к площадке.")
         return redirect("go_guide_dashboard")
+    ui_texts = get_ui_texts(unit)
 
     tours = request.session.get('tours', [])
 
@@ -948,6 +1046,8 @@ def tours_view(request):
     context = {
         'unit': unit,
         'tours': tours,
+        'ui_texts': ui_texts,
+        'page_title': ui_texts.get("service_title", "Туры"),
     }
     return render(request, "go_guide_portal/tours.html", context)
 
