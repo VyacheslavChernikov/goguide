@@ -150,34 +150,13 @@
         this.showError("Не удалось открыть 360-превью");
         return;
       }
-      // Перерисовываем виджет каждый раз, чтобы скрипты заново инициализировались
-      this.previewContent.innerHTML = "";
-      this.previewContent.innerHTML = widget;
-      this._executeScripts(this.previewContent);
+      this._renderIframe(widget);
       this.previewModal.classList.add("show");
     }
 
     closePreview() {
       if (!this.previewModal) return;
       this.previewModal.classList.remove("show");
-    }
-
-    _executeScripts(container) {
-      const scripts = container.querySelectorAll("script");
-      scripts.forEach((old) => {
-        const s = document.createElement("script");
-        if (old.src) {
-          // добавляем cache-busting, чтобы loader выполнялся повторно
-          const url = new URL(old.src, window.location.href);
-          url.searchParams.set("_ts", Date.now().toString());
-          s.src = url.toString();
-        } else {
-          s.textContent = old.textContent || "";
-        }
-        // копируем атрибуты
-        [...old.attributes].forEach((attr) => s.setAttribute(attr.name, attr.value));
-        old.replaceWith(s);
-      });
     }
 
     _ensurePreviewHost() {
@@ -215,6 +194,32 @@
         body.appendChild(fallback);
         this.previewContent = fallback;
       }
+    }
+
+    _renderIframe(html) {
+      if (!this.previewContent) return;
+      this.previewContent.innerHTML = "";
+      const iframe = document.createElement("iframe");
+      iframe.setAttribute("sandbox", "allow-same-origin allow-scripts allow-popups allow-forms");
+      iframe.setAttribute("referrerpolicy", "no-referrer");
+      iframe.style.width = "100%";
+      iframe.style.height = "70vh";
+      iframe.style.border = "0";
+      iframe.style.background = "#0b1324";
+      iframe.srcdoc = `
+        <!doctype html>
+        <html>
+          <head>
+            <meta charset="utf-8" />
+            <style>
+              html, body { margin:0; padding:0; background:#0b1324; color:#e2e8f0; }
+            </style>
+          </head>
+          <body>
+            ${html}
+          </body>
+        </html>`;
+      this.previewContent.appendChild(iframe);
     }
 
     async handleSubmit(e) {
