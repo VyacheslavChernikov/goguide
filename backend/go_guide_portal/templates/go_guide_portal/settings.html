@@ -1,4 +1,5 @@
 {% extends "go_guide_portal/base.html" %}
+{% load static %}
 {% block content %}
 <div class="flex items-center justify-between mb-4">
   <div>
@@ -237,5 +238,10 @@
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+  <script src="{% static 'widget/widget-presets.js' %}"></script>
+  <script src="{% static 'widget/configurator.js' %}"></script>
 {% endblock %}
 
