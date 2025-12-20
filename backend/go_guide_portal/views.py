@@ -1095,6 +1095,13 @@ def settings_view(request):
     unit_form = BusinessUnitForm(instance=unit)
     pwd_form = AdminPasswordForm(user=request.user)
 
+    # embed code for booking widget
+    base_url = request.build_absolute_uri("/").rstrip("/")
+    embed_code = (
+        f'<script src="{base_url}/static/widget/booking-widget.js" defer></script>\n'
+        f'<booking-widget data-bu-id="{unit.id}" data-api-base="{base_url}/api"></booking-widget>'
+    )
+
     if request.method == "POST":
         if "save_unit" in request.POST:
             unit_form = BusinessUnitForm(request.POST, instance=unit)
@@ -1118,6 +1125,7 @@ def settings_view(request):
         'unit': unit,
         'unit_form': unit_form,
         'pwd_form': pwd_form,
+        'embed_code': embed_code,
     }
     return render(request, "go_guide_portal/settings.html", context)
 

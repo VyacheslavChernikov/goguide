@@ -151,6 +151,17 @@
         <button type="submit" class="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20">Сменить пароль</button>
       </div>
     </form>
+
+    <div class="mt-8 border-t border-white/10 pt-5">
+      <h4 class="text-md font-semibold mb-2">Виджет бронирования (готовый код)</h4>
+      <p class="text-sm text-muted mb-2">Скопируйте и вставьте на сайт клиента. Бизнес ID подставлен автоматически.</p>
+      <div class="space-y-2">
+        <textarea readonly class="w-full px-3 py-2 rounded-lg bg-panel border border-white/10 text-text font-mono text-xs min-h-[120px]" id="embedCode">{{ embed_code }}</textarea>
+        <div class="flex justify-end">
+          <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('embedCode').value)" class="px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-sm">Скопировать</button>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 {% endblock %}
