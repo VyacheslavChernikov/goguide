@@ -117,6 +117,40 @@
           {{ unit_form.portal_theme }}
         </div>
       </div>
+      <div class="mt-4 border-t border-white/10 pt-4 space-y-3">
+        <h4 class="text-md font-semibold">Реквизиты для выплат</h4>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm mb-1">Способ выплат</label>
+            {{ unit_form.payout_method }}
+          </div>
+          <div>
+            <label class="block text-sm mb-1">Р/с или карта (СБП)</label>
+            {{ unit_form.payout_account }}
+          </div>
+          <div>
+            <label class="block text-sm mb-1">Банк</label>
+            {{ unit_form.payout_bank }}
+          </div>
+          <div>
+            <label class="block text-sm mb-1">БИК</label>
+            {{ unit_form.payout_bik }}
+          </div>
+          <div>
+            <label class="block text-sm mb-1">ИНН</label>
+            {{ unit_form.payout_inn }}
+          </div>
+          <div>
+            <label class="block text-sm mb-1">КПП</label>
+            {{ unit_form.payout_kpp }}
+          </div>
+          <div class="lg:col-span-2">
+            <label class="block text-sm mb-1">Юр. наименование / ФИО</label>
+            {{ unit_form.payout_name }}
+          </div>
+        </div>
+        <p class="text-xs text-muted">Эти реквизиты будут использоваться для будущих выплат (payouts) после подключения провайдера.</p>
+      </div>
       <div>
         <label class="block text-sm mb-1">Описание</label>
         {{ unit_form.description }}

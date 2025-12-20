@@ -53,6 +53,19 @@ class BusinessUnit(models.Model):
     alice_key = models.TextField(blank=True, null=True, verbose_name="Yandex Alice API Key")
     widget_config = models.JSONField(default=dict, blank=True, verbose_name="Настройки виджета бронирования")
     portal_theme = models.CharField(max_length=16, default="dark", verbose_name="Тема портала (dark/light)")
+    # Реквизиты для выплат (payout)
+    payout_account = models.CharField(max_length=32, blank=True, verbose_name="Расчетный счет / карта для выплат")
+    payout_bank = models.CharField(max_length=128, blank=True, verbose_name="Банк для выплат")
+    payout_bik = models.CharField(max_length=16, blank=True, verbose_name="БИК")
+    payout_inn = models.CharField(max_length=16, blank=True, verbose_name="ИНН")
+    payout_kpp = models.CharField(max_length=16, blank=True, verbose_name="КПП")
+    payout_name = models.CharField(max_length=255, blank=True, verbose_name="Юр. наименование / ФИО получателя")
+    payout_method = models.CharField(
+        max_length=16,
+        default="bank",
+        choices=[("bank", "Банковский счет"), ("sbp", "СБП / карта")],
+        verbose_name="Способ выплат",
+    )
 
     def __str__(self):
         return self.name

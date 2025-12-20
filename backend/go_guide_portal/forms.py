@@ -147,6 +147,13 @@ class BusinessUnitForm(forms.ModelForm):
             "photo_url",
             "widget_config",
             "portal_theme",
+            "payout_method",
+            "payout_account",
+            "payout_bank",
+            "payout_bik",
+            "payout_inn",
+            "payout_kpp",
+            "payout_name",
         ]
         base_input = "w-full px-3 py-2 rounded-lg bg-panel border border-white/10 text-text placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent"
         widgets = {
@@ -183,6 +190,13 @@ class BusinessUnitForm(forms.ModelForm):
             "photo_url": forms.URLInput(attrs={"class": base_input, "placeholder": "https://..."}),
             "widget_config": forms.HiddenInput(),
             "portal_theme": forms.Select(attrs={"class": f"{base_input} pr-8"}, choices=[("dark", "Dark"), ("light", "Light")]),
+            "payout_method": forms.Select(attrs={"class": f"{base_input} pr-8"}, choices=[("bank", "Банковский счет"), ("sbp", "СБП / карта")]),
+            "payout_account": forms.TextInput(attrs={"class": base_input, "placeholder": "Р/с или карта для выплат"}),
+            "payout_bank": forms.TextInput(attrs={"class": base_input, "placeholder": "Банк"}),
+            "payout_bik": forms.TextInput(attrs={"class": base_input, "placeholder": "БИК"}),
+            "payout_inn": forms.TextInput(attrs={"class": base_input, "placeholder": "ИНН"}),
+            "payout_kpp": forms.TextInput(attrs={"class": base_input, "placeholder": "КПП"}),
+            "payout_name": forms.TextInput(attrs={"class": base_input, "placeholder": "Юр. наименование / ФИО"}),
         }
 
     def __init__(self, *args, **kwargs):
