@@ -145,6 +145,7 @@ class BusinessUnitForm(forms.ModelForm):
             "allow_emoji",
             "description",
             "photo_url",
+            "widget_config",
         ]
         base_input = "w-full px-3 py-2 rounded-lg bg-panel border border-white/10 text-text placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent"
         widgets = {
@@ -179,6 +180,7 @@ class BusinessUnitForm(forms.ModelForm):
             "allow_emoji": forms.CheckboxInput(attrs={"class": "h-4 w-4 text-accent border-white/20 rounded"}),
             "description": forms.Textarea(attrs={"class": f"{base_input} min-h-[100px]", "rows": 3}),
             "photo_url": forms.URLInput(attrs={"class": base_input, "placeholder": "https://..."}),
+            "widget_config": forms.HiddenInput(),
         }
 
     def __init__(self, *args, **kwargs):

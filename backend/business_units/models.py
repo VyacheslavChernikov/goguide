@@ -51,6 +51,7 @@ class BusinessUnit(models.Model):
     gigachat_scope = models.CharField(max_length=64, blank=True, null=True, default="GIGACHAT_API_PERS", verbose_name="GigaChat Scope")
     gigachat_key = models.TextField(blank=True, null=True, verbose_name="GigaChat Auth Key")  # legacy
     alice_key = models.TextField(blank=True, null=True, verbose_name="Yandex Alice API Key")
+    widget_config = models.JSONField(default=dict, blank=True, verbose_name="Настройки виджета бронирования")
 
     def __str__(self):
         return self.name
