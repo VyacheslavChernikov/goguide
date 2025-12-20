@@ -97,10 +97,9 @@
       this.statusText = this.shadowRoot.querySelector("#statusText");
       this.messageBox = this.shadowRoot.querySelector("#message");
       this.widgetLink = this.shadowRoot.querySelector("#widgetLink");
-      this.previewModal = this.shadowRoot.querySelector("#previewModal");
-      this.previewContent = this.shadowRoot.querySelector("#previewContent");
+      this.previewModal = null;
+      this.previewContent = null;
       this.shadowRoot.querySelector("#openPreview").addEventListener("click", () => this.openPreview());
-      this.shadowRoot.querySelector("#closePreview").addEventListener("click", () => this.closePreview());
       this.form.addEventListener("submit", (e) => this.handleSubmit(e));
     }
 
@@ -146,13 +145,61 @@
       if (!sel) return;
       const widget = sel.dataset.widget || "";
       if (!widget.trim()) return;
+      this._ensurePreviewHost();
       this.previewContent.innerHTML = widget;
-      this.previewModal.showModal();
+      this._executeScripts(this.previewContent);
+      this.previewModal.classList.add("show");
     }
 
     closePreview() {
-      this.previewModal.close();
+      if (!this.previewModal) return;
+      this.previewModal.classList.remove("show");
       this.previewContent.innerHTML = "";
+    }
+
+    _executeScripts(container) {
+      const scripts = container.querySelectorAll("script");
+      scripts.forEach((old) => {
+        const s = document.createElement("script");
+        if (old.src) {
+          s.src = old.src;
+        } else {
+          s.textContent = old.textContent || "";
+        }
+        // копируем атрибуты
+        [...old.attributes].forEach((attr) => s.setAttribute(attr.name, attr.value));
+        old.replaceWith(s);
+      });
+    }
+
+    _ensurePreviewHost() {
+      if (this.previewModal && this.previewContent) return;
+      let host = document.getElementById("booking-widget-preview-host");
+      if (!host) {
+        host = document.createElement("div");
+        host.id = "booking-widget-preview-host";
+        host.innerHTML = `
+          <style>
+            #booking-widget-preview-host { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; z-index: 99999; }
+            #booking-widget-preview-host.show { display: flex; background: rgba(0,0,0,0.65); backdrop-filter: blur(2px); }
+            #booking-widget-preview-modal { width: 80vw; max-width: 900px; min-height: 300px; background:#0b1324; color:#e2e8f0; border:1px solid #1e293b; border-radius:12px; box-shadow:0 20px 60px rgba(0,0,0,0.45); display:flex; flex-direction:column; overflow:hidden; }
+            #booking-widget-preview-modal header { display:flex; align-items:center; justify-content:space-between; padding:12px 16px; border-bottom:1px solid #1e293b; font-weight:600; }
+            #booking-widget-preview-modal .body { padding:16px; min-height:240px; }
+            #booking-widget-preview-close { background:none; border:none; color:#e2e8f0; font-size:18px; cursor:pointer; }
+          </style>
+          <div id="booking-widget-preview-modal">
+            <header>
+              <span>360°</span>
+              <button id="booking-widget-preview-close" aria-label="Закрыть">×</button>
+            </header>
+            <div class="body"><div id="booking-widget-preview-content"></div></div>
+          </div>
+        `;
+        document.body.appendChild(host);
+        host.querySelector("#booking-widget-preview-close").addEventListener("click", () => this.closePreview());
+      }
+      this.previewModal = host;
+      this.previewContent = host.querySelector("#booking-widget-preview-content");
     }
 
     async handleSubmit(e) {
