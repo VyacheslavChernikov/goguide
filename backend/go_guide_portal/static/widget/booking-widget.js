@@ -154,7 +154,6 @@
     closePreview() {
       if (!this.previewModal) return;
       this.previewModal.classList.remove("show");
-      this.previewContent.innerHTML = "";
     }
 
     _executeScripts(container) {
