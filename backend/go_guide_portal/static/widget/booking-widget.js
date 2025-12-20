@@ -6,6 +6,44 @@
       this.apiBase = this.getAttribute("data-api-base") || `${window.location.origin}/api`;
       this.businessUnit = this.getAttribute("data-bu-id") || "";
       this.lang = this.getAttribute("data-lang") || "ru";
+      this.theme = {
+        primary: this.getAttribute("data-primary") || "#0f172a",
+        panel: this.getAttribute("data-panel") || "#0b1324",
+        accent: this.getAttribute("data-accent") || "#64ffda",
+        text: this.getAttribute("data-text") || "#e2e8f0",
+        muted: this.getAttribute("data-muted") || "#94a3b8",
+        border: this.getAttribute("data-border") || "#1e293b",
+        errorBg: this.getAttribute("data-error") || "#7f1d1d55",
+        errorText: this.getAttribute("data-error-text") || "#fecdd3",
+        successBg: this.getAttribute("data-success") || "#064e3b55",
+        successText: this.getAttribute("data-success-text") || "#bbf7d0",
+        shadow: this.getAttribute("data-shadow") || "0 10px 40px rgba(0,0,0,0.25)",
+        radius: this.getAttribute("data-radius") || "12px",
+        fontFamily: this.getAttribute("data-font-family") || "'Inter', system-ui, -apple-system, sans-serif",
+        previewHeight: this.getAttribute("data-preview-height") || "70vh",
+      };
+      this.labels = {
+        title: this.getAttribute("data-label-title") || "Онлайн-бронирование",
+        service: this.getAttribute("data-label-service") || "Услуга / номер",
+        start: this.getAttribute("data-label-start") || "Дата и время начала",
+        end: this.getAttribute("data-label-end") || "Дата и время окончания",
+        name: this.getAttribute("data-label-name") || "Имя",
+        phone: this.getAttribute("data-label-phone") || "Телефон",
+        email: this.getAttribute("data-label-email") || "Email",
+        submit: this.getAttribute("data-label-submit") || "Забронировать",
+        preview: this.getAttribute("data-label-preview") || "Смотреть 360°",
+        success: this.getAttribute("data-success-text") || "Бронирование создано. Мы свяжемся для подтверждения.",
+      };
+      this.options = {
+        hideEmail: this.getAttribute("data-hide-email") === "true",
+        emailOptional: this.getAttribute("data-email-optional") === "true",
+        phonePlaceholder: this.getAttribute("data-phone-placeholder") || "+7...",
+        autoOpenPreview: this.getAttribute("data-auto-open-preview") === "true",
+        previewAutoClose: parseInt(this.getAttribute("data-preview-autoclose") || "0", 10),
+        previewHeight: this.theme.previewHeight,
+        scrollIntoView: this.getAttribute("data-scroll-into-view") === "true",
+        cardWidth: this.getAttribute("data-width") || "100%",
+      };
       this._services = [];
     }
 
@@ -15,66 +53,67 @@
     }
 
     renderSkeleton() {
+      const t = this.theme;
       const style = `
-        :host { all: initial; font-family: 'Inter', system-ui, -apple-system, sans-serif; display:block; }
-        .card { background:#0f172a; color:#e2e8f0; border:1px solid #1e293b; border-radius:12px; padding:16px; box-shadow:0 10px 40px rgba(0,0,0,0.25); max-width:640px; }
+        :host { all: initial; font-family: ${t.fontFamily}; display:block; }
+        .card { background:${t.primary}; color:${t.text}; border:1px solid ${t.border}; border-radius:${t.radius}; padding:16px; box-shadow:${t.shadow}; max-width:640px; width:${this.options.cardWidth}; }
         h3 { margin:0 0 12px; font-size:18px; }
-        label { display:block; font-size:13px; color:#94a3b8; margin-bottom:4px; }
-        input, select, textarea { width:100%; padding:10px; border-radius:10px; border:1px solid #1e293b; background:#0b1324; color:#e2e8f0; font-size:14px; box-sizing:border-box; }
-        input:focus, select:focus, textarea:focus { outline:2px solid #64ffda44; border-color:#64ffda; }
+        label { display:block; font-size:13px; color:${t.muted}; margin-bottom:4px; }
+        input, select, textarea { width:100%; padding:10px; border-radius:${t.radius}; border:1px solid ${t.border}; background:${t.panel}; color:${t.text}; font-size:14px; box-sizing:border-box; }
+        input:focus, select:focus, textarea:focus { outline:2px solid ${t.accent}44; border-color:${t.accent}; }
         .row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-        .btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:10px 14px; border-radius:10px; background:#64ffda; color:#0b1324; font-weight:700; cursor:pointer; border:none; transition:transform .1s ease, box-shadow .1s ease; }
-        .btn:hover { transform:translateY(-1px); box-shadow:0 8px 24px rgba(100,255,218,0.35); }
+        .btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:10px 14px; border-radius:${t.radius}; background:${t.accent}; color:${t.panel}; font-weight:700; cursor:pointer; border:none; transition:transform .1s ease, box-shadow .1s ease; }
+        .btn:hover { transform:translateY(-1px); box-shadow:0 8px 24px ${t.accent}55; }
         .btn:disabled { opacity:0.6; cursor:not-allowed; }
-        .muted { color:#94a3b8; font-size:13px; }
-        .error { margin-top:8px; color:#fecdd3; background:#7f1d1d55; border:1px solid #ef444433; padding:8px 10px; border-radius:10px; font-size:13px; }
-        .success { margin-top:8px; color:#bbf7d0; background:#064e3b55; border:1px solid #22c55e33; padding:8px 10px; border-radius:10px; font-size:13px; }
-        .preview-link { color:#64ffda; cursor:pointer; font-size:13px; }
-        dialog { border:none; border-radius:12px; padding:0; background:transparent; }
-        .overlay { width:80vw; max-width:900px; min-height:300px; border-radius:12px; overflow:hidden; border:1px solid #1e293b; background:#0b1324; box-shadow:0 20px 60px rgba(0,0,0,0.45); }
-        .overlay-header { display:flex; justify-content:space-between; align-items:center; padding:12px 16px; border-bottom:1px solid #1e293b; }
-        .overlay-body { padding:16px; background:#0f172a; color:#e2e8f0; min-height:240px; }
-        .close { background:none; border:none; color:#e2e8f0; cursor:pointer; font-size:18px; }
+        .muted { color:${t.muted}; font-size:13px; }
+        .error { margin-top:8px; color:${t.errorText}; background:${t.errorBg}; border:1px solid #ef444433; padding:8px 10px; border-radius:${t.radius}; font-size:13px; }
+        .success { margin-top:8px; color:${t.successText}; background:${t.successBg}; border:1px solid #22c55e33; padding:8px 10px; border-radius:${t.radius}; font-size:13px; }
+        .preview-link { color:${t.accent}; cursor:pointer; font-size:13px; }
+        dialog { border:none; border-radius:${t.radius}; padding:0; background:transparent; }
+        .overlay { width:80vw; max-width:900px; min-height:300px; border-radius:${t.radius}; overflow:hidden; border:1px solid ${t.border}; background:${t.panel}; box-shadow:0 20px 60px rgba(0,0,0,0.45); }
+        .overlay-header { display:flex; justify-content:space-between; align-items:center; padding:12px 16px; border-bottom:1px solid ${t.border}; }
+        .overlay-body { padding:16px; background:${t.primary}; color:${t.text}; min-height:240px; }
+        .close { background:none; border:none; color:${t.text}; cursor:pointer; font-size:18px; }
       `;
       this.shadowRoot.innerHTML = `
         <style>${style}</style>
         <div class="card">
-          <h3>Онлайн-бронирование</h3>
+          <h3>${this.labels.title}</h3>
           <form id="form">
             <div>
-              <label>Услуга / номер</label>
+              <label>${this.labels.service}</label>
               <select name="service" required id="service"></select>
               <div class="muted" id="serviceHint"></div>
             </div>
             <div class="row" style="margin-top:12px;">
               <div>
-                <label>Дата и время начала</label>
+                <label>${this.labels.start}</label>
                 <input type="datetime-local" name="start_at" required />
               </div>
               <div>
-                <label>Дата и время окончания</label>
+                <label>${this.labels.end}</label>
                 <input type="datetime-local" name="end_at" required />
               </div>
             </div>
             <div class="row" style="margin-top:12px;">
               <div>
-                <label>Имя</label>
-                <input type="text" name="client_name" required placeholder="Иван" />
+                <label>${this.labels.name}</label>
+                <input type="text" name="client_name" required placeholder="${this.getAttribute("data-name-placeholder") || "Иван"}" />
               </div>
               <div>
-                <label>Телефон</label>
-                <input type="tel" name="client_phone" required placeholder="+7..." />
+                <label>${this.labels.phone}</label>
+                <input type="tel" name="client_phone" required placeholder="${this.options.phonePlaceholder}" />
               </div>
             </div>
-            <div style="margin-top:12px;">
-              <label>Email</label>
-              <input type="email" name="client_email" placeholder="you@example.com" />
+            <div style="margin-top:12px; ${this.options.hideEmail ? "display:none;" : ""}">
+              <label>${this.labels.email}</label>
+              <input type="email" name="client_email" ${this.options.emailOptional ? "" : "required"} placeholder="${this.getAttribute("data-email-placeholder") || "you@example.com"}" />
             </div>
             <div id="widgetLink" style="margin-top:10px; display:none;">
-              <span class="preview-link" id="openPreview">Смотреть 360°</span>
+              <span class="preview-link" id="openPreview">${this.labels.preview}</span>
             </div>
             <div style="margin-top:16px; display:flex; gap:10px; align-items:center;">
-              <button type="submit" class="btn" id="submitBtn">Забронировать</button>
+              <button type="submit" class="btn" id="submitBtn">${this.labels.submit}</button>
               <span class="muted" id="statusText"></span>
             </div>
             <div id="message"></div>
@@ -134,7 +173,8 @@
       const widget = sel ? sel.dataset.widget : "";
       if (widget && widget.trim()) {
         this.widgetLink.style.display = "block";
-        this.previewContent.innerHTML = "";
+        if (this.previewContent) this.previewContent.innerHTML = "";
+        if (this.options.autoOpenPreview) this.openPreview();
       } else {
         this.widgetLink.style.display = "none";
       }
@@ -205,16 +245,16 @@
       iframe.setAttribute("sandbox", "allow-same-origin allow-scripts allow-popups allow-forms");
       iframe.setAttribute("referrerpolicy", "no-referrer");
       iframe.style.width = "100%";
-      iframe.style.height = "70vh";
+      iframe.style.height = this.options.previewHeight || "70vh";
       iframe.style.border = "0";
-      iframe.style.background = "#0b1324";
+      iframe.style.background = this.theme.panel;
       iframe.srcdoc = `
         <!doctype html>
         <html>
           <head>
             <meta charset="utf-8" />
             <style>
-              html, body { margin:0; padding:0; background:#0b1324; color:#e2e8f0; }
+              html, body { margin:0; padding:0; background:${this.theme.panel}; color:${this.theme.text}; }
             </style>
           </head>
           <body>
