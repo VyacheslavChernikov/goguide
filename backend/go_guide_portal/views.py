@@ -537,14 +537,115 @@ def appointments_view(request):
         return redirect("go_guide_dashboard")
     ui_texts = get_ui_texts(unit)
     apps_qs = Appointment.objects.filter(business_unit=unit).order_by('-created_at')
+    form = AppointmentForm(initial={
+        "start_at": timezone.now(),
+        "end_at": timezone.now() + timedelta(hours=1),
+    })
+    form.fields["service"].queryset = Service.objects.filter(business_unit=unit)
     context = {
         "appointments": apps_qs,
         "unit": unit,
         "page_title": ui_texts.get("booking_title", "Записи"),
         "service_label": ui_texts.get("service_singular", "Услуга"),
         "ui_texts": ui_texts,
+        "form": form,
+        "statuses": Appointment.STATUS_CHOICES,
     }
     return render(request, "go_guide_portal/appointments.html", context)
+
+
+@login_required
+def appointment_create(request):
+    unit = _get_user_unit(request.user)
+    if not unit:
+        messages.error(request, "Вы не привязаны к площадке.")
+        return redirect("go_guide_dashboard")
+    if request.method != "POST":
+        return redirect("appointments")
+
+    form = AppointmentForm(request.POST)
+    form.fields["service"].queryset = Service.objects.filter(business_unit=unit)
+    if form.is_valid():
+        obj = form.save(commit=False)
+        obj.business_unit = unit
+        if not obj.total_price and obj.service:
+            obj.total_price = obj.service.price
+        obj.is_confirmed = obj.status == "confirmed"
+        obj.save()
+        form.save_m2m()
+        messages.success(request, "Запись создана.")
+    else:
+        non_field = form.non_field_errors()
+        err_text = "; ".join(non_field) if non_field else form.errors.as_text()
+        messages.error(request, f"Не удалось сохранить запись: {err_text}")
+    return redirect("appointments")
+
+
+@login_required
+def appointment_update(request, pk):
+    unit = _get_user_unit(request.user)
+    if not unit:
+        messages.error(request, "Вы не привязаны к площадке.")
+        return redirect("go_guide_dashboard")
+    appointment = get_object_or_404(Appointment, pk=pk, business_unit=unit)
+    if request.method != "POST":
+        return redirect("appointments")
+    form = AppointmentForm(request.POST, instance=appointment)
+    form.fields["service"].queryset = Service.objects.filter(business_unit=unit)
+    if form.is_valid():
+        obj = form.save(commit=False)
+        obj.business_unit = unit
+        obj.is_confirmed = obj.status == "confirmed"
+        obj.save()
+        form.save_m2m()
+        messages.success(request, "Запись обновлена.")
+    else:
+        non_field = form.non_field_errors()
+        err_text = "; ".join(non_field) if non_field else form.errors.as_text()
+        messages.error(request, f"Не удалось обновить запись: {err_text}")
+    return redirect("appointments")
+
+
+@login_required
+def appointment_delete(request, pk):
+    unit = _get_user_unit(request.user)
+    if not unit:
+        messages.error(request, "Вы не привязаны к площадке.")
+        return redirect("go_guide_dashboard")
+    appointment = get_object_or_404(Appointment, pk=pk, business_unit=unit)
+    if request.method == "POST":
+        appointment.delete()
+        messages.success(request, "Запись удалена.")
+    return redirect("appointments")
+
+
+@login_required
+def appointments_export_csv(request):
+    unit = _get_user_unit(request.user)
+    if not unit:
+        messages.error(request, "Вы не привязаны к площадке.")
+        return redirect("go_guide_dashboard")
+
+    queryset = Appointment.objects.filter(business_unit=unit).order_by('-created_at')
+    status = request.GET.get("status")
+    if status and status != "all":
+        queryset = queryset.filter(status=status)
+
+    response = HttpResponse(content_type="text/csv")
+    response["Content-Disposition"] = 'attachment; filename="appointments.csv"'
+    writer = csv.writer(response)
+    writer.writerow(["ID", "Клиент", "Услуга", "Начало", "Окончание", "Сумма", "Статус"])
+    for app in queryset:
+        writer.writerow([
+            app.id,
+            app.client_name,
+            app.service.title if app.service else "",
+            app.start_at,
+            app.end_at,
+            app.total_price,
+            app.get_status_display(),
+        ])
+    return response
 
 
 @login_required

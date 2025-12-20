@@ -3,13 +3,15 @@
 <div class="flex items-center justify-between mb-4">
   <div>
     <h1 class="text-2xl font-semibold">Аналитика</h1>
-    <p class="text-muted text-sm">Ключевые метрики и графики по бронированиям</p>
+    <p class="text-muted text-sm">
+      Ключевые метрики и графики по {{ ui_texts.booking_plural|default:"бронированиям"|lower }}
+    </p>
   </div>
 </div>
 
 <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
   <div class="bg-panel border border-white/5 rounded-xl p-4">
-    <div class="text-muted text-sm">Всего бронирований</div>
+    <div class="text-muted text-sm">Всего {{ ui_texts.booking_plural|default:"бронирований"|lower }}</div>
     <div class="text-3xl font-bold mt-2">{{ total_bookings|default:0 }}</div>
   </div>
   <div class="bg-panel border border-white/5 rounded-xl p-4">
@@ -21,7 +23,7 @@
     <div class="text-3xl font-bold mt-2">{{ total_revenue|default:0 }} ₽</div>
   </div>
   <div class="bg-panel border border-white/5 rounded-xl p-4">
-    <div class="text-muted text-sm">Загрузка номеров</div>
+    <div class="text-muted text-sm">Загрузка {{ ui_texts.service_plural|default:"номеров"|lower }}</div>
     <div class="text-3xl font-bold mt-2">{{ occupancy_rate|default:0 }}%</div>
   </div>
 </div>
@@ -42,13 +44,13 @@
 </div>
 
 <div class="bg-panel border border-white/5 rounded-xl p-4">
-  <h3 class="text-lg font-semibold mb-3">Топ-5 номеров</h3>
+  <h3 class="text-lg font-semibold mb-3">Топ-5 {{ ui_texts.service_plural|default:"номеров"|lower }}</h3>
   <div class="overflow-x-auto">
     <table class="min-w-full text-sm">
       <thead class="text-muted bg-white/5">
         <tr>
-          <th class="text-left px-4 py-3">Номер</th>
-          <th class="text-left px-4 py-3">Бронирований</th>
+          <th class="text-left px-4 py-3">{{ ui_texts.service_singular|default:"Номер" }}</th>
+          <th class="text-left px-4 py-3">{{ ui_texts.booking_plural|default:"Бронирований" }}</th>
           <th class="text-left px-4 py-3">Выручка</th>
         </tr>
       </thead>
@@ -103,7 +105,7 @@
       data: {
         labels: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
         datasets: [{
-          label: 'Бронирований',
+          label: '{{ ui_texts.booking_plural|default:"Бронирований" }}',
           data: weekdayStats,
           backgroundColor: '#FE7B5433',
           borderColor: '#FE7B54',

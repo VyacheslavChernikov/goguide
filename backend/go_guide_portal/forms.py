@@ -53,8 +53,14 @@ class AppointmentForm(forms.ModelForm):
             "client_phone": forms.TextInput(attrs={"class": base_input, "required": True}),
             "client_email": forms.EmailInput(attrs={"class": base_input}),
             "service": forms.Select(attrs={"class": f"{base_input} pr-8"}),
-            "start_at": forms.DateTimeInput(attrs={"type": "datetime-local", "class": base_input, "required": True}),
-            "end_at": forms.DateTimeInput(attrs={"type": "datetime-local", "class": base_input, "required": True}),
+            "start_at": forms.DateTimeInput(
+                format="%Y-%m-%dT%H:%M",
+                attrs={"type": "datetime-local", "class": base_input, "required": True},
+            ),
+            "end_at": forms.DateTimeInput(
+                format="%Y-%m-%dT%H:%M",
+                attrs={"type": "datetime-local", "class": base_input, "required": True},
+            ),
             "total_price": forms.NumberInput(attrs={"class": base_input, "step": "0.01", "min": "0"}),
             "status": forms.Select(attrs={"class": f"{base_input} pr-8"}),
             "comment": forms.Textarea(attrs={"class": f"{base_input} min-h-[100px]", "rows": 3}),
@@ -74,6 +80,19 @@ class AppointmentForm(forms.ModelForm):
                 cleaned["total_price"] = self.instance.total_price
             elif service and service.price is not None:
                 cleaned["total_price"] = service.price
+
+        # Проверка пересечений по времени для той же услуги (и площадки)
+        if service and start_at and end_at:
+            qs = Appointment.objects.filter(
+                service=service,
+                business_unit=service.business_unit,
+            ).exclude(status="cancelled")
+            if self.instance and self.instance.pk:
+                qs = qs.exclude(pk=self.instance.pk)
+            overlap = qs.filter(start_at__lt=end_at, end_at__gt=start_at).exists()
+            if overlap:
+                raise forms.ValidationError("В это время услуга уже занята (пересечение с другой записью).")
+
         return cleaned
 
     def save(self, commit=True):
@@ -83,6 +102,13 @@ class AppointmentForm(forms.ModelForm):
             instance.save()
             self.save_m2m()
         return instance
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        dt_formats = ["%Y-%m-%dT%H:%M", "%Y-%m-%d %H:%M", "%d.%m.%Y %H:%M"]
+        for fname in ["start_at", "end_at"]:
+            if fname in self.fields:
+                self.fields[fname].input_formats = dt_formats
 
 
 class BusinessUnitForm(forms.ModelForm):

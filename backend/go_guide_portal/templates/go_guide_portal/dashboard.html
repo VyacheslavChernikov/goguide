@@ -7,19 +7,19 @@
 
 <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
   <div class="bg-panel rounded-xl p-4 border border-white/5">
-    <div class="text-muted text-sm">Активные записи</div>
+    <div class="text-muted text-sm">{{ dashboard_labels.active_metric|default:"Активные записи" }}</div>
     <div class="text-3xl font-bold mt-2">{{ active_appointments|default:0 }}</div>
   </div>
   <div class="bg-panel rounded-xl p-4 border border-white/5">
-    <div class="text-muted text-sm">Всего записей</div>
+    <div class="text-muted text-sm">{{ dashboard_labels.total_metric|default:"Всего записей" }}</div>
     <div class="text-3xl font-bold mt-2">{{ total_appointments|default:0 }}</div>
   </div>
   <div class="bg-panel rounded-xl p-4 border border-white/5">
-    <div class="text-muted text-sm">Выручка</div>
+    <div class="text-muted text-sm">{{ dashboard_labels.revenue_metric|default:"Выручка" }}</div>
     <div class="text-3xl font-bold mt-2">{{ total_revenue|default:0 }} ₽</div>
   </div>
   <div class="bg-panel rounded-xl p-4 border border-white/5">
-    <div class="text-muted text-sm">Услуг</div>
+    <div class="text-muted text-sm">{{ dashboard_labels.services_metric|default:"Услуг" }}</div>
     <div class="text-3xl font-bold mt-2">{{ total_services|default:0 }}</div>
   </div>
 </div>
@@ -31,7 +31,7 @@
       <thead class="text-muted">
         <tr class="border-b border-white/5">
           <th class="text-left py-2">Клиент</th>
-          <th class="text-left py-2">Услуга</th>
+          <th class="text-left py-2">{{ dashboard_labels.service_column|default:"Услуга" }}</th>
           <th class="text-left py-2">Начало</th>
           <th class="text-left py-2">Окончание</th>
           <th class="text-left py-2">Статус</th>

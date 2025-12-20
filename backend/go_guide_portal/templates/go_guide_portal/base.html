@@ -23,7 +23,7 @@
   </script>
 </head>
 <body class="bg-bg text-text min-h-screen">
-  {% with current_unit=unit %}
+  {% with current_unit=current_unit|default_if_none:"" %}
   <div class="bg-bg text-text min-h-screen">
     <!-- Mobile header -->
     <div class="md:hidden flex items-center justify-between px-4 py-3 border-b border-white/5">
@@ -43,56 +43,14 @@
         </div>
         {% with active=request.resolver_match.url_name %}
         <nav class="flex-1 px-3 py-4 space-y-1 text-sm">
-          {% if current_unit and current_unit.business_type == 'hotel' %}
-            <a href="{% url 'go_guide_dashboard' %}" class="flex items-center px-3 py-2 rounded-md hover:bg-white/10 transition {% if active == 'go_guide_dashboard' %}bg-white/10 text-accent{% endif %}">
-              <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l9-8 9 8M4 10v10h6V14h4v6h6V10"/></svg>
-              Главная
-            </a>
-            <a href="{% url 'rooms' %}" class="flex items-center px-3 py-2 rounded-md hover:bg-white/10 transition {% if active == 'rooms' %}bg-white/10 text-accent{% endif %}">
-              <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 10h16M4 14h16M10 6h4m-7 0h1m8 0h1M5 18h14"/></svg>
-              Номера
-            </a>
-            <a href="{% url 'bookings' %}" class="flex items-center px-3 py-2 rounded-md hover:bg-white/10 transition {% if active == 'bookings' %}bg-white/10 text-accent{% endif %}">
-              <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2m-8 0h8m-8 0H7a2 2 0 00-2 2v8a2 2 0 002 2h10a2 2 0 002-2V9a2 2 0 00-2-2h-1m-8 4h8m-8 4h5"/></svg>
-              Бронирования
-            </a>
-            <a href="{% url 'analytics' %}" class="flex items-center px-3 py-2 rounded-md hover:bg-white/10 transition {% if active == 'analytics' %}bg-white/10 text-accent{% endif %}">
-              <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 19h16M7 16v-4m5 4V8m5 8V6"/></svg>
-              Аналитика
-            </a>
-            <a href="{% url 'ai_assistant' %}" class="flex items-center px-3 py-2 rounded-md hover:bg-white/10 transition {% if active == 'ai_assistant' %}bg-white/10 text-accent{% endif %}">
-              <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2"/><circle cx="12" cy="12" r="9"/></svg>
-              AI-ассистент
-            </a>
-            <a href="{% url 'settings' %}" class="flex items-center px-3 py-2 rounded-md hover:bg-white/10 transition {% if active == 'settings' %}bg-white/10 text-accent{% endif %}">
-              <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317l.675-1.842a1 1 0 011.9 0l.675 1.842a1 1 0 00.95.69h1.95a1 1 0 01.96 1.28l-.6 1.802a1 1 0 00.27 1.02l1.389 1.389a1 1 0 010 1.414l-1.389 1.389a1 1 0 00-.27 1.02l.6 1.802a1 1 0 01-.96 1.28h-1.95a1 1 0 00-.95.69l-.675 1.842a1 1 0 01-1.9 0l-.675-1.842a1 1 0 00-.95-.69h-1.95a1 1 0 01-.96-1.28l.6-1.802a1 1 0 00-.27-1.02L5.636 13.41a1 1 0 010-1.414l1.389-1.389a1 1 0 00.27-1.02l-.6-1.802A1 1 0 016.655 5h1.95a1 1 0 00.95-.683z"/><circle cx="12" cy="12" r="3"/></svg>
-              Настройки
-            </a>
-          {% else %}
-            <a href="{% url 'go_guide_dashboard' %}" class="flex items-center px-3 py-2 rounded-md hover:bg-white/10 transition {% if active == 'go_guide_dashboard' %}bg-white/10 text-accent{% endif %}">
-              <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l9-8 9 8M4 10v10h6V14h4v6h6V10"/></svg>
-              Главная
-            </a>
-            <a href="{% url 'services' %}" class="flex items-center px-3 py-2 rounded-md hover:bg-white/10 transition {% if active == 'services' %}bg-white/10 text-accent{% endif %}">
-              <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M4 12h16M4 17h16"/></svg>
-              Услуги
-            </a>
-            <a href="{% url 'appointments' %}" class="flex items-center px-3 py-2 rounded-md hover:bg-white/10 transition {% if active == 'appointments' %}bg-white/10 text-accent{% endif %}">
-              <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2m-8 0h8m-8 0H7a2 2 0 00-2 2v8a2 2 0 002 2h10a2 2 0 002-2V9a2 2 0 00-2-2h-1m-8 4h8m-8 4h5"/></svg>
-              Записи
-            </a>
-            <a href="{% url 'analytics' %}" class="flex items-center px-3 py-2 rounded-md hover:bg-white/10 transition {% if active == 'analytics' %}bg-white/10 text-accent{% endif %}">
-              <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 19h16M7 16v-4m5 4V8m5 8V6"/></svg>
-              Аналитика
-            </a>
-            <a href="{% url 'ai_assistant' %}" class="flex items-center px-3 py-2 rounded-md hover:bg-white/10 transition {% if active == 'ai_assistant' %}bg-white/10 text-accent{% endif %}">
-              <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2"/><circle cx="12" cy="12" r="9"/></svg>
-              AI-ассистент
-            </a>
-            <a href="{% url 'settings' %}" class="flex items-center px-3 py-2 rounded-md hover:bg-white/10 transition {% if active == 'settings' %}bg-white/10 text-accent{% endif %}">
-              <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317l.675-1.842a1 1 0 011.9 0l.675 1.842a1 1 0 00.95.69h1.95a1 1 0 01.96 1.28l-.6 1.802a1 1 0 00.27 1.02l1.389 1.389a1 1 0 010 1.414l-1.389 1.389a1 1 0 00-.27 1.02l.6 1.802a1 1 0 01-.96 1.28h-1.95a1 1 0 00-.95.69l-.675 1.842a1 1 0 01-1.9 0l-.675-1.842a1 1 0 00-.95-.69h-1.95a1 1 0 01-.96-1.28l.6-1.802a1 1 0 00-.27-1.02L5.636 13.41a1 1 0 010-1.414l1.389-1.389a1 1 0 00.27-1.02l-.6-1.802A1 1 0 016.655 5h1.95a1 1 0 00.95-.683z"/><circle cx="12" cy="12" r="3"/></svg>
-              Настройки
-            </a>
+          {% if nav_items %}
+            {% for item in nav_items %}
+              <a href="{% url item.url_name %}"
+                 class="flex items-center px-3 py-2 rounded-md hover:bg-white/10 transition {% if active == item.url_name %}bg-white/10 text-accent{% endif %}">
+                <span aria-hidden="true">{% autoescape off %}{{ item.icon }}{% endautoescape %}</span>
+                {{ item.label }}
+              </a>
+            {% endfor %}
           {% endif %}
         </nav>
         {% endwith %}
@@ -120,6 +78,20 @@
               </div>
             {% endfor %}
           </div>
+          {% for message in messages %}
+            {% if message.tags == 'error' %}
+            <div class="fixed inset-0 z-40 flex items-center justify-center">
+              <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+              <div class="relative bg-panel border border-white/10 rounded-xl p-6 w-full max-w-md shadow-2xl">
+                <h3 class="text-xl font-semibold mb-2">Не удалось выполнить действие</h3>
+                <p class="text-sm text-muted mb-4">{{ message }}</p>
+                <div class="text-right">
+                  <button class="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20" onclick="this.closest('.fixed').remove()">Закрыть</button>
+                </div>
+              </div>
+            </div>
+            {% endif %}
+          {% endfor %}
         {% endif %}
         {% block content %}{% endblock %}
       </main>

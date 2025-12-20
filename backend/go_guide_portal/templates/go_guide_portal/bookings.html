@@ -2,8 +2,8 @@
 {% block content %}
 <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
   <div>
-    <h1 class="text-2xl font-semibold">Бронирования</h1>
-    <p class="text-muted text-sm">Управляйте бронированиями и статусами</p>
+    <h1 class="text-2xl font-semibold">{{ page_title|default:"Бронирования" }}</h1>
+    <p class="text-muted text-sm">Управляйте {{ ui_texts.booking_plural|default:"бронированиями"|lower }} и статусами</p>
   </div>
   <div class="flex items-center gap-2">
     <a href="{% url 'bookings_export' %}{% if current_status and current_status != 'all' %}?status={{ current_status }}{% endif %}" class="px-4 py-2 rounded-lg border border-white/10 hover:bg-white/5 text-sm">Экспорт CSV</a>
@@ -40,7 +40,7 @@
       <thead class="text-muted bg-white/5">
         <tr>
           <th class="text-left px-4 py-3">Клиент</th>
-          <th class="text-left px-4 py-3">Номер</th>
+          <th class="text-left px-4 py-3">{{ service_label|default:"Услуга" }}</th>
           <th class="text-left px-4 py-3">Начало</th>
           <th class="text-left px-4 py-3">Окончание</th>
           <th class="text-left px-4 py-3">Сумма</th>
@@ -88,7 +88,7 @@
         </tr>
         {% empty %}
         <tr>
-          <td colspan="7" class="px-4 py-6 text-center text-muted">Бронирований пока нет.</td>
+          <td colspan="7" class="px-4 py-6 text-center text-muted">{{ page_title|default:"Бронирования" }} пока нет.</td>
         </tr>
         {% endfor %}
       </tbody>
@@ -100,7 +100,7 @@
 <div id="createBookingModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-40 hidden">
   <div class="bg-panel border border-white/10 rounded-xl w-full max-w-3xl p-6 relative">
     <button class="absolute top-3 right-3 text-muted hover:text-text" data-close>×</button>
-    <h3 class="text-xl font-semibold mb-4">Новое бронирование</h3>
+    <h3 class="text-xl font-semibold mb-4">Новое {{ ui_texts.booking_singular|default:"бронирование" }}</h3>
     <form action="{% url 'booking_create' %}" method="post" class="grid grid-cols-1 md:grid-cols-2 gap-4">
       {% csrf_token %}
       <div>
@@ -116,7 +116,7 @@
         {{ form.client_email }}
       </div>
       <div>
-        <label class="block text-sm mb-1">Номер</label>
+        <label class="block text-sm mb-1">{{ service_label|default:"Услуга" }}</label>
         {{ form.service }}
       </div>
       <div>
@@ -151,7 +151,7 @@
 <div id="editBookingModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-40 hidden">
   <div class="bg-panel border border-white/10 rounded-xl w-full max-w-3xl p-6 relative">
     <button class="absolute top-3 right-3 text-muted hover:text-text" data-close>×</button>
-    <h3 class="text-xl font-semibold mb-4">Редактировать бронирование</h3>
+    <h3 class="text-xl font-semibold mb-4">Редактировать {{ ui_texts.booking_singular|default:"бронирование" }}</h3>
     <form id="editBookingForm" action="#" method="post" class="grid grid-cols-1 md:grid-cols-2 gap-4">
       {% csrf_token %}
       <div>
@@ -167,7 +167,7 @@
         <input type="email" name="client_email" id="editEmail" class="w-full px-3 py-2 rounded-lg bg-panel border border-white/10 text-text placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent" />
       </div>
       <div>
-        <label class="block text-sm mb-1">Номер</label>
+        <label class="block text-sm mb-1">{{ service_label|default:"Услуга" }}</label>
         <select name="service" id="editService" class="w-full px-3 py-2 rounded-lg bg-panel border border-white/10 text-text focus:outline-none focus:ring-2 focus:ring-accent">
           {% for srv in unit.services.all %}
             <option value="{{ srv.id }}">{{ srv.title }}</option>
