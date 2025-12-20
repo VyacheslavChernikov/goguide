@@ -21,7 +21,7 @@ class GigaChatSettingsForm(forms.ModelForm):
 class ServiceForm(forms.ModelForm):
     class Meta:
         model = Service
-        fields = ["title", "service_type", "price", "description", "photo_url", "is_available"]
+        fields = ["title", "service_type", "price", "description", "photo_url", "tour_widget", "is_available"]
         base_input = "w-full px-3 py-2 rounded-lg bg-panel border border-white/10 text-text placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent"
         widgets = {
             "title": forms.TextInput(attrs={"class": base_input, "required": True, "placeholder": "Например, Номер 101"}),
@@ -29,6 +29,13 @@ class ServiceForm(forms.ModelForm):
             "price": forms.NumberInput(attrs={"class": base_input, "step": "0.01", "min": "0"}),
             "description": forms.Textarea(attrs={"class": f"{base_input} min-h-[100px]", "rows": 3}),
             "photo_url": forms.URLInput(attrs={"class": base_input, "placeholder": "https://..."}),
+            "tour_widget": forms.Textarea(
+                attrs={
+                    "class": f"{base_input} min-h-[120px] font-mono text-xs",
+                    "rows": 4,
+                    "placeholder": '<div class="goguide-tour-widget"...></div>',
+                }
+            ),
             "is_available": forms.CheckboxInput(attrs={"class": "h-4 w-4 text-accent border-white/20 rounded"}),
         }
 

@@ -28,6 +28,12 @@ class Service(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Цена")
     is_available = models.BooleanField(default=True, verbose_name="Доступна")
     photo_url = models.URLField(blank=True, null=True, verbose_name="URL фото")
+    tour_widget = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="Виджет 360/iframe",
+        help_text="HTML-код виджета (например, GoGuide 360)",
+    )
 
     class Meta:
         verbose_name = "Услуга"

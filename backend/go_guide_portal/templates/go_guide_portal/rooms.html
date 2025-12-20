@@ -52,6 +52,7 @@
               data-price="{{ room.price|default_if_none:0|floatformat:'-2' }}"
               data-description="{{ room.description|default_if_none:''|escape }}"
               data-photo="{{ room.photo_url|default_if_none:''|escape }}"
+              data-widget="{{ room.tour_widget|default_if_none:''|escape }}"
               data-available="{{ room.is_available|yesno:'true,false' }}"
               data-update-url="{% url 'room_update' room.id %}"
             >Редактировать</button>
@@ -105,6 +106,11 @@
         {{ form.photo_url }}
         <p class="text-xs text-muted mt-1">Вставьте прямую ссылку на изображение (например, https://example.com/image.jpg). Если используете freeimage.host — копируйте прямой линк (CDN), а не страницу просмотра.</p>
       </div>
+      <div>
+        <label class="block text-sm mb-1">Виджет 360 / iframe</label>
+        {{ form.tour_widget }}
+        <p class="text-xs text-muted mt-1">Вставьте HTML-код виджета (например, GoGuide 360). Сохраняется как есть.</p>
+      </div>
       <div class="flex justify-end space-x-3 pt-2">
         <button type="button" data-close class="px-4 py-2 rounded-lg border border-white/10 hover:bg-white/5">Отмена</button>
         <button type="submit" class="px-4 py-2 rounded-lg bg-accent text-bg font-medium hover:bg-accent/80 transition">Сохранить</button>
@@ -151,6 +157,10 @@
         <input type="url" name="photo_url" id="editRoomPhoto" class="w-full px-3 py-2 rounded-lg bg-panel border border-white/10 text-text placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent" />
         <p class="text-xs text-muted mt-1">Вставьте прямую ссылку на изображение (например, https://example.com/image.jpg). Если используете freeimage.host — копируйте прямой линк (CDN), а не страницу просмотра.</p>
       </div>
+      <div>
+        <label class="block text-sm mb-1">Виджет 360 / iframe</label>
+        <textarea name="tour_widget" id="editRoomWidget" rows="4" class="w-full px-3 py-2 rounded-lg bg-panel border border-white/10 text-text placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent font-mono text-xs"></textarea>
+      </div>
       <div class="flex justify-end space-x-3 pt-2">
         <button type="button" data-close class="px-4 py-2 rounded-lg border border-white/10 hover:bg-white/5">Отмена</button>
         <button type="submit" class="px-4 py-2 rounded-lg bg-accent text-bg font-medium hover:bg-accent/80 transition">Сохранить</button>
@@ -192,6 +202,7 @@
         document.getElementById('editRoomPrice').value = data.price || '';
         document.getElementById('editRoomDescription').value = data.description || '';
         document.getElementById('editRoomPhoto').value = data.photo || '';
+        document.getElementById('editRoomWidget').value = data.widget || '';
         document.getElementById('editRoomAvailable').checked = data.available === 'true';
         toggle(editModal, true);
       });

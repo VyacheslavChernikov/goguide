@@ -50,6 +50,7 @@
               data-price="{{ srv.price|default_if_none:0|floatformat:'-2' }}"
               data-description="{{ srv.description|default_if_none:''|escape }}"
               data-photo="{{ srv.photo_url|default_if_none:''|escape }}"
+              data-widget="{{ srv.tour_widget|default_if_none:''|escape }}"
               data-available="{{ srv.is_available|yesno:'true,false' }}"
               data-update-url="{% url 'service_update' srv.id %}"
             >Редактировать</button>
@@ -101,6 +102,11 @@
         <label class="block text-sm mb-1">URL фото</label>
         {{ form.photo_url }}
       </div>
+      <div class="md:col-span-2">
+        <label class="block text-sm mb-1">Виджет 360 / iframe</label>
+        {{ form.tour_widget }}
+        <p class="text-xs text-muted mt-1">Вставьте HTML-код виджета (например, GoGuide 360). Сохраняется как есть.</p>
+      </div>
       <div class="flex items-center space-x-2">
         {{ form.is_available }}
         <span class="text-sm">Опубликовать сразу</span>
@@ -144,6 +150,10 @@
       <div class="md:col-span-2">
         <label class="block text-sm mb-1">URL фото</label>
         <input type="url" name="photo_url" id="editServicePhoto" class="w-full px-3 py-2 rounded-lg bg-panel border border-white/10 text-text placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent" />
+      </div>
+      <div class="md:col-span-2">
+        <label class="block text-sm mb-1">Виджет 360 / iframe</label>
+        <textarea name="tour_widget" id="editServiceWidget" rows="4" class="w-full px-3 py-2 rounded-lg bg-panel border border-white/10 text-text placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent font-mono text-xs"></textarea>
       </div>
       <div class="flex items-center space-x-2">
         <input type="checkbox" name="is_available" id="editServiceAvailable" class="h-4 w-4 text-accent border-white/20 rounded" />
@@ -190,6 +200,7 @@
         document.getElementById('editServicePrice').value = d.price || '';
         document.getElementById('editServiceDescription').value = d.description || '';
         document.getElementById('editServicePhoto').value = d.photo || '';
+        document.getElementById('editServiceWidget').value = d.widget || '';
         document.getElementById('editServiceAvailable').checked = d.available === 'true';
         toggle(editModal, true);
       });
