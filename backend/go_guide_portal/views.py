@@ -119,6 +119,37 @@ def _build_analytics_context(unit):
     return services_block + "\n\n" + bookings_block
 
 
+def _build_bookings_context(unit):
+    """
+    Краткая сводка по бронированиям для ответов ассистента.
+    """
+    apps = Appointment.objects.filter(business_unit=unit).order_by("-created_at")
+    total = apps.count()
+    confirmed = apps.filter(status="confirmed").count()
+    pending = apps.filter(status="pending").count()
+    cancelled = apps.filter(status="cancelled").count()
+    today = apps.filter(start_at__date=timezone.now().date()).count()
+    upcoming = apps.filter(start_at__gte=timezone.now()).order_by("start_at")[:3]
+    upcoming_lines = [
+        f"- {a.client_name or 'Клиент'} | {a.service.title if a.service else 'услуга?'} | {a.start_at} - {a.end_at} | статус: {a.get_status_display()} | сумма: {a.total_price or 0}"
+        for a in upcoming
+    ]
+    last_bookings = apps.order_by("-created_at")[:5]
+    last_lines = [
+        f"- {a.client_name or 'Клиент'} | {a.service.title if a.service else 'услуга?'} | {a.start_at} - {a.end_at} | статус: {a.get_status_display()} | сумма: {a.total_price or 0}"
+        for a in last_bookings
+    ]
+    lines = [
+        f"Всего бронирований: {total} (подтверждено: {confirmed}, в ожидании: {pending}, отменено: {cancelled})",
+        f"Бронирований сегодня: {today}",
+        "Ближайшие заезды:" if upcoming_lines else "Ближайших заездов нет.",
+        *(upcoming_lines if upcoming_lines else []),
+        "Последние бронирования:" if last_lines else "Бронирования отсутствуют.",
+        *(last_lines if last_lines else []),
+    ]
+    return "БРОНИРОВАНИЯ:\n" + "\n".join(lines)
+
+
 def _build_profile_context(unit):
     profile_parts = []
     # режим и политики
@@ -874,18 +905,25 @@ def chat_with_ai(request):
         kw in lowered
         for kw in ["коммерческое предложение", "ком предложение", "презента", "реклама", "менеджер", "продаж", "предложение клиенту"]
     )
+    bookings_needed = any(
+        kw in lowered
+        for kw in ["бронь", "брониров", "booking", "reservation", "засел", "отмена", "подтверд"]
+    )
     analytics_block = _build_analytics_context(unit) if analytics_needed else ""
+    bookings_block = _build_bookings_context(unit)
 
     contacts_block = _build_contacts_context(unit)
     profile_block = _build_profile_context(unit)
 
     if analytics_needed:
-        combined_context = "\n\n".join([part for part in [contacts_block, profile_block, analytics_block] if part.strip()])
+        combined_context = "\n\n".join([part for part in [contacts_block, profile_block, analytics_block, bookings_block] if part.strip()])
+    elif bookings_needed:
+        combined_context = "\n\n".join([part for part in [contacts_block, profile_block, bookings_block] if part.strip()])
     elif marketing_needed:
-        combined_context = "\n\n".join([part for part in [contacts_block, profile_block] if part.strip()])
+        combined_context = "\n\n".join([part for part in [contacts_block, profile_block, bookings_block] if part.strip()])
     else:
-        # базовый ответ без аналитики, чтобы не засорять отчётами
-        combined_context = "\n\n".join([part for part in [contacts_block, profile_block] if part.strip()])
+        # базовый ответ: контакты, профиль, краткие брони
+        combined_context = "\n\n".join([part for part in [contacts_block, profile_block, bookings_block] if part.strip()])
 
     if not combined_context:
         return JsonResponse({"error": "NO_CONTEXT", "message": "Не найден контекст для ответа (профиль не заполнен)."}, status=400)
