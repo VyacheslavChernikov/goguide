@@ -7,6 +7,30 @@ class BusinessUnit(models.Model):
     slug = models.SlugField(unique=True, verbose_name="Слаг")
     api_key = models.CharField(max_length=64, unique=True, default=secrets.token_hex(32), verbose_name="API ключ")
     address = models.CharField(max_length=255, blank=True, verbose_name="Адрес")
+    phone = models.CharField(max_length=32, blank=True, verbose_name="Телефон")
+    email = models.EmailField(blank=True, verbose_name="E-mail")
+    website = models.URLField(blank=True, verbose_name="Сайт")
+    socials = models.TextField(blank=True, verbose_name="Соцсети/ссылки")
+    working_hours_from = models.CharField(max_length=16, blank=True, verbose_name="Время открытия")
+    working_hours_to = models.CharField(max_length=16, blank=True, verbose_name="Время закрытия")
+    checkin_time = models.CharField(max_length=16, blank=True, verbose_name="Чек-ин")
+    checkout_time = models.CharField(max_length=16, blank=True, verbose_name="Чек-аут")
+    parking_info = models.CharField(max_length=255, blank=True, verbose_name="Парковка")
+    wifi_info = models.CharField(max_length=255, blank=True, verbose_name="Wi‑Fi")
+    meals_info = models.CharField(max_length=255, blank=True, verbose_name="Питание")
+    kids_policy = models.CharField(max_length=255, blank=True, verbose_name="Детская политика/опции")
+    pets_policy = models.CharField(max_length=255, blank=True, verbose_name="Политика по питомцам")
+    smoke_policy = models.CharField(max_length=255, blank=True, verbose_name="Политика курения")
+    accessibility = models.CharField(max_length=255, blank=True, verbose_name="Доступность/инклюзивность")
+    coordinates = models.CharField(max_length=255, blank=True, verbose_name="Координаты/проезд")
+    positioning = models.TextField(blank=True, verbose_name="УТП/позиционирование")
+    TONE_CHOICES = [
+        ("friendly", "Дружелюбный"),
+        ("neutral", "Нейтральный"),
+        ("formal", "Строгий"),
+    ]
+    tone = models.CharField(max_length=16, choices=TONE_CHOICES, default="friendly", verbose_name="Тон ассистента")
+    allow_emoji = models.BooleanField(default=True, verbose_name="Разрешать эмодзи в ответах ассистента")
     description = models.TextField(blank=True, verbose_name="Описание")
     photo_url = models.URLField(blank=True, null=True, verbose_name="URL фото")
     BUSINESS_TYPES = [

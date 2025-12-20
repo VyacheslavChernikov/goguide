@@ -16,46 +16,12 @@
 
   <div class="bg-panel border border-white/5 rounded-xl p-6">
     <div class="flex items-center justify-between mb-4">
-      <h2 class="text-lg font-semibold">База знаний</h2>
-      <form method="post" enctype="multipart/form-data" class="flex items-center gap-3">
-        {% csrf_token %}
-        <input type="hidden" name="upload_knowledge" value="1" />
-        <input type="file" name="knowledge_file" accept=".txt,.pdf" class="text-sm text-muted file:mr-3 file:px-3 file:py-2 file:rounded-lg file:border-none file:bg-white/10 file:text-text hover:file:bg-white/20">
-        <button type="submit" class="px-4 py-2 rounded-lg bg-accent text-bg font-medium hover:bg-accent/80 transition">Добавить знания</button>
-      </form>
+      <h2 class="text-lg font-semibold">Профиль бизнеса</h2>
+      <a href="{% url 'settings' %}" class="px-4 py-2 rounded-lg bg-accent text-bg font-medium hover:bg-accent/80 transition">
+        Открыть профиль
+      </a>
     </div>
-    {% if knowledge_docs %}
-      <div class="overflow-x-auto">
-        <table class="min-w-full text-sm">
-          <thead class="text-muted bg-white/5">
-            <tr>
-              <th class="text-left px-4 py-2">Файл</th>
-              <th class="text-left px-4 py-2">Статус</th>
-              <th class="text-left px-4 py-2">Загружен</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for doc in knowledge_docs %}
-            <tr class="border-t border-white/5">
-              <td class="px-4 py-2">{{ doc.original_name }}</td>
-              <td class="px-4 py-2">
-                {% if doc.status == 'processed' %}
-                  <span class="px-2 py-1 rounded bg-green-500/20 text-green-200 text-xs">Обработан</span>
-                {% elif doc.status == 'failed' %}
-                  <span class="px-2 py-1 rounded bg-red-500/20 text-red-200 text-xs">Ошибка</span>
-                {% else %}
-                  <span class="px-2 py-1 rounded bg-yellow-500/20 text-yellow-100 text-xs">Ожидает обработки</span>
-                {% endif %}
-              </td>
-              <td class="px-4 py-2">{{ doc.uploaded_at }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    {% else %}
-      <p class="text-muted text-sm">Загруженных файлов пока нет.</p>
-    {% endif %}
+    <p class="text-muted text-sm">Заполните профиль на странице настроек, чтобы ассистент отвечал по фактам из структурированных данных.</p>
   </div>
 
   <div class="bg-panel border border-white/5 rounded-xl p-6">
@@ -77,9 +43,8 @@
         <p class="text-muted text-sm">Сообщений пока нет.</p>
       {% endif %}
     </div>
-    <form method="post" id="chat-form" action="{% url 'ai_assistant' %}" class="flex items-center gap-3">
+    <form method="post" id="chat-form" action="{% url 'chat_with_ai' %}" class="flex items-center gap-3">
       {% csrf_token %}
-      <input type="hidden" name="chat_message_flag" value="1" />
       <textarea id="chat-input" name="chat_message" rows="2" placeholder="Задайте вопрос ассистенту..." class="flex-1 px-3 py-2 rounded-lg bg-panel border border-white/10 text-text placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent"></textarea>
       <button type="submit" class="px-4 py-2 rounded-lg bg-accent text-bg font-medium hover:bg-accent/80 transition">Отправить</button>
     </form>

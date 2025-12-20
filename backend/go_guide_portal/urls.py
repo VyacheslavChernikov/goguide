@@ -17,6 +17,7 @@ urlpatterns = [
     path("dashboard/appointments/", views.appointments_view, name="appointments"),
     path("dashboard/analytics/", views.analytics_view, name="analytics"),
     path("dashboard/ai-assistant/", views.ai_assistant_view, name="ai_assistant"),
+    path("dashboard/chat-with-ai/", views.chat_with_ai, name="chat_with_ai"),
     path("dashboard/integrations/gigachat/", views.gigachat_settings_view, name="gigachat_settings"),
     path("dashboard/knowledge/", views.knowledge_upload, name="knowledge_upload"),
     path("dashboard/settings/", views.settings_view, name="settings"),

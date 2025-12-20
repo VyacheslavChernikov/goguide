@@ -22,6 +22,94 @@
         {{ unit_form.address }}
       </div>
       <div>
+        <label class="block text-sm mb-1">Телефон</label>
+        {{ unit_form.phone }}
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        <div>
+          <label class="block text-sm mb-1">E-mail</label>
+          {{ unit_form.email }}
+        </div>
+        <div>
+          <label class="block text-sm mb-1">Сайт</label>
+          {{ unit_form.website }}
+        </div>
+      </div>
+      <div>
+        <label class="block text-sm mb-1">Соцсети/ссылки</label>
+        {{ unit_form.socials }}
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        <div>
+          <label class="block text-sm mb-1">Время открытия</label>
+          {{ unit_form.working_hours_from }}
+        </div>
+        <div>
+          <label class="block text-sm mb-1">Время закрытия</label>
+          {{ unit_form.working_hours_to }}
+        </div>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        <div>
+          <label class="block text-sm mb-1">Чек-ин</label>
+          {{ unit_form.checkin_time }}
+        </div>
+        <div>
+          <label class="block text-sm mb-1">Чек-аут</label>
+          {{ unit_form.checkout_time }}
+        </div>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        <div>
+          <label class="block text-sm mb-1">Парковка</label>
+          {{ unit_form.parking_info }}
+        </div>
+        <div>
+          <label class="block text-sm mb-1">Wi‑Fi</label>
+          {{ unit_form.wifi_info }}
+        </div>
+      </div>
+      <div>
+        <label class="block text-sm mb-1">Питание</label>
+        {{ unit_form.meals_info }}
+      </div>
+      <div>
+        <label class="block text-sm mb-1">Детская политика/опции</label>
+        {{ unit_form.kids_policy }}
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        <div>
+          <label class="block text-sm mb-1">Политика по питомцам</label>
+          {{ unit_form.pets_policy }}
+        </div>
+        <div>
+          <label class="block text-sm mb-1">Политика курения</label>
+          {{ unit_form.smoke_policy }}
+        </div>
+      </div>
+      <div>
+        <label class="block text-sm mb-1">Доступность/инклюзивность</label>
+        {{ unit_form.accessibility }}
+      </div>
+      <div>
+        <label class="block text-sm mb-1">Координаты/проезд</label>
+        {{ unit_form.coordinates }}
+      </div>
+      <div>
+        <label class="block text-sm mb-1">УТП/позиционирование</label>
+        {{ unit_form.positioning }}
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 items-center">
+        <div>
+          <label class="block text-sm mb-1">Тон ассистента</label>
+          {{ unit_form.tone }}
+        </div>
+        <div class="flex items-center gap-2 mt-6 lg:mt-0">
+          {{ unit_form.allow_emoji }}
+          <span class="text-sm text-muted">Разрешать эмодзи в ответах</span>
+        </div>
+      </div>
+      <div>
         <label class="block text-sm mb-1">Описание</label>
         {{ unit_form.description }}
       </div>

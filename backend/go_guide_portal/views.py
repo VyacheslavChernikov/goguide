@@ -18,7 +18,7 @@ from dotenv import load_dotenv
 from business_units.models import BusinessUnit
 from services.models import Service
 from appointments.models import Appointment
-from go_guide_portal.models import BusinessUnitUser, KnowledgeFile, KnowledgeDocument
+from go_guide_portal.models import BusinessUnitUser
 from go_guide_portal.forms import (
     ServiceForm,
     AppointmentForm,
@@ -33,13 +33,6 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 BACKEND_ROOT = PROJECT_ROOT / "backend"
 load_dotenv(PROJECT_ROOT / ".env", override=False)
 load_dotenv(BACKEND_ROOT / ".env", override=False)
-
-import chromadb
-
-try:
-    import PyPDF2
-except ImportError:
-    PyPDF2 = None
 
 
 def login_view(request):
@@ -66,6 +59,235 @@ def _get_user_unit(user):
         return link.business_unit
     except BusinessUnitUser.DoesNotExist:
         return None
+
+
+def _build_contacts_context(unit):
+    contacts = []
+    if unit.address:
+        contacts.append(f"Адрес: {unit.address}")
+    if getattr(unit, "phone", ""):
+        contacts.append(f"Телефон: {unit.phone}")
+    if getattr(unit, "email", ""):
+        contacts.append(f"E-mail: {unit.email}")
+    if getattr(unit, "website", ""):
+        contacts.append(f"Сайт: {unit.website}")
+    if getattr(unit, "socials", ""):
+        contacts.append(f"Соцсети/ссылки: {unit.socials}")
+    if not contacts:
+        contacts.append("Контакты: не заданы (нет адреса/телефона в данных площадки).")
+    return "Контакты площадки:\n" + "\n".join(f"- {c}" for c in contacts)
+
+
+def _build_analytics_context(unit):
+    """
+    Сводка по услугам и бронированиям для отчётных вопросов.
+    """
+    # Услуги
+    services = Service.objects.filter(business_unit=unit).order_by("title")
+    services_lines = []
+    for s in services:
+        services_lines.append(
+            f"- {s.title} | тип: {s.get_service_type_display() if hasattr(s, 'get_service_type_display') else s.service_type} | цена: {s.price or 0} | доступно: {'да' if s.is_available else 'нет'}"
+        )
+    services_block = "Услуги:\n" + ("\n".join(services_lines) if services_lines else "- нет данных")
+
+    # Бронирования
+    apps = Appointment.objects.filter(business_unit=unit)
+    total = apps.count()
+    confirmed = apps.filter(status="confirmed")
+    cancelled = apps.filter(status="cancelled")
+    pending = apps.filter(status="pending")
+    revenue = confirmed.aggregate(total=Sum("total_price"))["total"] or 0
+    avg_check = confirmed.aggregate(avg=Sum("total_price") / Count("id"))["avg"] if confirmed.exists() else 0
+    upcoming = confirmed.filter(start_at__gte=timezone.now()).order_by("start_at")[:5]
+    upcoming_lines = [
+        f"- {a.client_name or 'Клиент'} | {a.service.title if a.service else 'услуга?'} | {a.start_at} - {a.end_at} | {a.total_price or 0}"
+        for a in upcoming
+    ]
+    bookings_block = (
+        "Бронирования:\n"
+        f"- всего: {total}\n"
+        f"- подтверждено: {confirmed.count()}\n"
+        f"- в ожидании: {pending.count()}\n"
+        f"- отменено: {cancelled.count()}\n"
+        f"- выручка подтверждённых: {revenue}\n"
+        f"- средний чек подтверждённых: {avg_check or 0}\n"
+        "Ближайшие заезды:\n" + ("\n".join(upcoming_lines) if upcoming_lines else "- нет запланированных")
+    )
+
+    return services_block + "\n\n" + bookings_block
+
+
+def _build_profile_context(unit):
+    profile_parts = []
+    # режим и политики
+    times = []
+    if unit.working_hours_from and unit.working_hours_to:
+        times.append(f"Работаем: {unit.working_hours_from}–{unit.working_hours_to}")
+    checkinout = []
+    if unit.checkin_time:
+        checkinout.append(f"Чек-ин: {unit.checkin_time}")
+    if unit.checkout_time:
+        checkinout.append(f"Чек-аут: {unit.checkout_time}")
+    if times:
+        profile_parts.append("\n".join(times))
+    if checkinout:
+        profile_parts.append("\n".join(checkinout))
+
+    short_fields = [
+        ("Парковка", unit.parking_info),
+        ("Wi‑Fi", unit.wifi_info),
+        ("Питание", unit.meals_info),
+        ("Детская политика", unit.kids_policy),
+        ("Питомцы", unit.pets_policy),
+        ("Курение", unit.smoke_policy),
+        ("Доступность", unit.accessibility),
+        ("Проезд/координаты", unit.coordinates),
+    ]
+    for label, val in short_fields:
+        if val:
+            profile_parts.append(f"{label}: {val}")
+
+    if unit.positioning:
+        profile_parts.append(f"УТП/позиционирование: {unit.positioning}")
+    if unit.description:
+        profile_parts.append(f"Описание: {unit.description}")
+
+    if unit.tone:
+        tone_map = {
+            "friendly": "дружелюбный",
+            "neutral": "нейтральный",
+            "formal": "строгий",
+        }
+        profile_parts.append(f"Тон ассистента: {tone_map.get(unit.tone, unit.tone)}; эмодзи: {'да' if unit.allow_emoji else 'нет'}")
+
+    if not profile_parts:
+        return ""
+    return "Профиль площадки:\n" + "\n".join(f"- {p}" for p in profile_parts)
+
+
+def _build_faq(unit):
+    def val(v, fallback="не указано"):
+        return v if v else fallback
+
+    faq_parts = [
+        f"Чек-ин / чек-аут: {val(unit.checkin_time)} / {val(unit.checkout_time)}",
+        f"Парковка: {val(unit.parking_info)}",
+        f"Wi‑Fi: {val(unit.wifi_info)}",
+        f"Питание: {val(unit.meals_info)}",
+        f"Питомцы: {val(unit.pets_policy)}",
+        f"Курение: {val(unit.smoke_policy)}",
+        f"Дети: {val(unit.kids_policy)}",
+        f"Доступность: {val(unit.accessibility)}",
+        f"Адрес: {val(unit.address)}",
+        f"Телефон: {val(getattr(unit, 'phone', ''))}",
+        f"E-mail: {val(getattr(unit, 'email', ''))}",
+        f"Сайт: {val(getattr(unit, 'website', ''))}",
+    ]
+    return "FAQ (быстрые ответы для гостей):\n" + "\n".join(f"- {p}" for p in faq_parts)
+
+
+def _build_checklist(name: str):
+    if name == "checkin":
+        return (
+            "Чек-лист заселения:\n"
+            "- Проверить готовность номера (уборка, бельё, расходники)\n"
+            "- Проверить документы гостя и оплату/депозит\n"
+            "- Озвучить правила (чек-аут, курение, тишина, питомцы)\n"
+            "- Выдать ключ/карту, показать Wi‑Fi, контакты ресепшн\n"
+            "- Сообщить про завтрак/питание и время работы\n"
+            "- Уточнить пожелания (детская кроватка, поздний выезд)\n"
+        )
+    if name == "event":
+        return (
+            "Чек-лист мероприятия:\n"
+            "- Подтвердить дату/время и сценарий\n"
+            "- Зал/площадка готова (рассадка, техника, климат)\n"
+            "- Кофе-брейк/фуршет: время, меню, сервировка\n"
+            "- Ответственные контакты: техподдержка, координатор\n"
+            "- Навигация и указатели для гостей\n"
+            "- План уборки и закрытия после мероприятия\n"
+        )
+    return ""
+
+
+def _build_incident_playbook(kind: str):
+    base = [
+        "- Сохраняем спокойствие, уточняем детали, благодарим за сигнал.",
+        "- Фиксируем время, номер/локацию, контакты гостя.",
+        "- При необходимости — быстро уведомляем ответственного/дежурного.",
+    ]
+    if kind == "noise":
+        extra = [
+            "- Проверяем источник шума; предупреждение нарушителям, при повторе — эскалация.",
+            "- Предлагаем гостю альтернативу: тихий номер/поздний check-out при возможности.",
+        ]
+    elif kind == "cleaning":
+        extra = [
+            "- Отправляем уборку/хозяйственную службу с приоритетом.",
+            "- Проверяем расходники, бельё, запахи; фотоконтроль.",
+        ]
+    elif kind == "payment":
+        extra = [
+            "- Проверяем транзакцию/бронь; объясняем гостю статус.",
+            "- Предлагаем безопасный способ оплаты; выдаём чек/квитанцию.",
+        ]
+    else:
+        extra = [
+            "- Определяем тип проблемы: шум/уборка/оплата/авария.",
+            "- Если требуется эвакуация/аварийная служба — действуем по инструкции.",
+        ]
+    finish = [
+        "- После решения: перезвонить гостю, подтвердить удовлетворённость.",
+        "- Сделать запись в журнале/CRM для последующего анализа.",
+    ]
+    return "Инцидент — порядок действий:\n" + "\n".join(base + extra + finish)
+
+
+def _build_guest_reply(unit):
+    # Короткий шаблон ответа гостю с фактами из профиля
+    def val(v, fallback="не указано"):
+        return v if v else fallback
+
+    parts = [
+        "Здравствуйте! Спасибо за обращение.",
+        f"Чек-ин: {val(unit.checkin_time)}, чек-аут: {val(unit.checkout_time)}.",
+        f"Парковка: {val(unit.parking_info)}. Wi‑Fi: {val(unit.wifi_info)}.",
+        f"Питание: {val(unit.meals_info)}.",
+        f"Адрес: {val(unit.address)}. Телефон: {val(getattr(unit, 'phone', ''))}.",
+    ]
+    if getattr(unit, "email", ""):
+        parts.append(f"Email: {unit.email}.")
+    if getattr(unit, "website", ""):
+        parts.append(f"Сайт: {unit.website}.")
+    parts.append("Если потребуется помощь — мы рядом.")
+    return "\n".join(parts)
+
+
+def _quick_command_reply(user_msg: str, unit):
+    text = user_msg.lower()
+    if "faq" in text:
+        return _build_faq(unit)
+    if "чеклист" in text or "чек-лист" in text:
+        if "засел" in text or "check-in" in text:
+            return _build_checklist("checkin")
+        if "меропр" in text or "event" in text or "ивент" in text:
+            return _build_checklist("event")
+    if "контакт" in text or "профиль" in text:
+        return "\n\n".join(
+            part for part in [_build_contacts_context(unit), _build_profile_context(unit)] if part
+        )
+    if "инцид" in text or "жалоб" in text or "эскалац" in text:
+        if "шум" in text:
+            return _build_incident_playbook("noise")
+        if "уборк" in text or "чист" in text:
+            return _build_incident_playbook("cleaning")
+        if "оплат" in text or "платеж" in text or "чек" in text:
+            return _build_incident_playbook("payment")
+        return _build_incident_playbook("generic")
+    if "ответ гостю" in text or "ответить гостю" in text or "guest" in text:
+        return _build_guest_reply(unit)
+    return None
 
 
 def get_gigachat_auth_key(request):
@@ -119,32 +341,6 @@ def dashboard(request):
         "unread_count": recent_appointments.count(),
     }
     return render(request, "go_guide_portal/dashboard.html", context)
-
-
-def _chunk_text(text, chunk_size=500, overlap=50):
-    chunks = []
-    start = 0
-    length = len(text)
-    while start < length:
-        end = min(start + chunk_size, length)
-        chunks.append(text[start:end])
-        start += chunk_size - overlap
-    return [c.strip() for c in chunks if c.strip()]
-
-
-def _read_text_from_file(fobj, name):
-    lower = name.lower()
-    if lower.endswith(".txt"):
-        return fobj.read().decode("utf-8", errors="ignore")
-    if lower.endswith(".pdf"):
-        if not PyPDF2:
-            raise ValueError("Поддержка PDF не установлена (PyPDF2).")
-        reader = PyPDF2.PdfReader(fobj)
-        pages = []
-        for page in reader.pages:
-            pages.append(page.extract_text() or "")
-        return "\n".join(pages)
-    raise ValueError("Поддерживаются только TXT или PDF.")
 
 
 @login_required
@@ -428,63 +624,125 @@ def ai_assistant_view(request):
         messages.success(request, "Настройки AI сохранены.")
         return redirect("ai_assistant")
 
-    # загрузка файла знаний
-    if request.method == "POST" and "upload_knowledge" in request.POST:
-        upload = request.FILES.get("knowledge_file")
-        if upload and upload.name.lower().endswith(".txt"):
-            doc = KnowledgeDocument.objects.create(
-                business_unit=unit,
-                file=upload,
-                original_name=upload.name,
-                status="pending",
-            )
-            messages.success(request, f"Файл {upload.name} загружен, ожидает обработки.")
-        else:
-            messages.error(request, "Загрузите .txt файл.")
-        return redirect("ai_assistant")
-
-    # чат
+    # чат (история для отображения — наполняется в chat_with_ai)
     chat_history = request.session.get("ai_chat_history", [])
-    if request.method == "POST" and "chat_message_flag" in request.POST:
-        user_msg = request.POST.get("chat_message", "").strip()
-        if user_msg:
-            chat_history.append({"role": "user", "content": user_msg})
-            if not unit.gigachat_auth_key:
-                return JsonResponse(
-                    {
-                        "error": "GIGACHAT_NOT_CONFIGURED",
-                        "message": "Заполни GigaChat Authorization key в /dashboard/integrations/gigachat/",
-                    },
-                    status=400,
-                )
-            try:
-                reply = ask_gigachat(
-                    user_msg,
-                    auth_key=unit.gigachat_auth_key,
-                    client_id=unit.gigachat_client_id,
-                    chat_url=None,
-                    scope=unit.gigachat_scope or None,
-                )
-            except RuntimeError as exc:
-                return JsonResponse({"error": "GIGACHAT_API_ERROR", "message": str(exc)}, status=502)
-            chat_history.append({"role": "assistant", "content": reply})
-            request.session["ai_chat_history"] = chat_history
-            request.session.modified = True
-            # если ajax-запрос — отдаем json, без редиректа и перерендера страницы
-            if request.headers.get("x-requested-with") == "XMLHttpRequest":
-                return JsonResponse({"reply": reply})
-            return redirect("ai_assistant")
-
-    knowledge_docs = KnowledgeDocument.objects.filter(business_unit=unit).order_by("-uploaded_at")
 
     context = {
         "unit": unit,
         "gigachat_key": unit.gigachat_auth_key or unit.gigachat_key or "",
         "alice_key": unit.alice_key or "",
-        "knowledge_docs": knowledge_docs,
         "chat_history": chat_history,
     }
     return render(request, "go_guide_portal/ai_assistant.html", context)
+
+
+@login_required
+def chat_with_ai(request):
+    if request.method != "POST":
+        return JsonResponse({"error": "METHOD_NOT_ALLOWED"}, status=405)
+
+    unit = _get_user_unit(request.user)
+    if not unit:
+        return JsonResponse({"error": "NO_UNIT", "message": "Вы не привязаны к площадке."}, status=400)
+
+    user_msg = (request.POST.get("chat_message") or "").strip()
+    if not user_msg:
+        return JsonResponse({"error": "EMPTY_MESSAGE", "message": "Введите вопрос."}, status=400)
+
+    quick_reply = _quick_command_reply(user_msg, unit)
+    if quick_reply:
+        chat_history = request.session.get("ai_chat_history", [])
+        chat_history.append({"role": "user", "content": user_msg})
+        chat_history.append({"role": "assistant", "content": quick_reply})
+        request.session["ai_chat_history"] = chat_history
+        request.session.modified = True
+        return JsonResponse({"reply": quick_reply})
+
+    if not unit.gigachat_auth_key:
+        return JsonResponse(
+            {
+                "error": "GIGACHAT_NOT_CONFIGURED",
+                "message": "Заполни GigaChat Authorization key в /dashboard/integrations/gigachat/",
+            },
+            status=400,
+        )
+
+    context_text = ""
+
+    lowered = user_msg.lower()
+    analytics_needed = any(
+        kw in lowered
+        for kw in ["аналит", "отчет", "отчёт", "statistics", "report", "метрик", "показател", "статист"]
+    )
+    marketing_needed = any(
+        kw in lowered
+        for kw in ["коммерческое предложение", "ком предложение", "презента", "реклама", "менеджер", "продаж", "предложение клиенту"]
+    )
+    analytics_block = _build_analytics_context(unit) if analytics_needed else ""
+
+    contacts_block = _build_contacts_context(unit)
+    profile_block = _build_profile_context(unit)
+
+    if analytics_needed:
+        combined_context = "\n\n".join([part for part in [contacts_block, profile_block, analytics_block] if part.strip()])
+    elif marketing_needed:
+        combined_context = "\n\n".join([part for part in [contacts_block, profile_block] if part.strip()])
+    else:
+        # базовый ответ без аналитики, чтобы не засорять отчётами
+        combined_context = "\n\n".join([part for part in [contacts_block, profile_block] if part.strip()])
+
+    if not combined_context:
+        return JsonResponse({"error": "NO_CONTEXT", "message": "Не найден контекст для ответа (профиль не заполнен)."}, status=400)
+
+    prompt_parts = [
+        "Отвечай только на основе приведённого контекста.",
+        "Если ответа нет в контексте, скажи, что данных недостаточно.",
+        "Форматируй ответ простым текстом: без Markdown, без символов #, **, |.",
+        "Используй читаемые блоки с заголовками в верхнем регистре и короткими пунктами с тире.",
+        "Не используй таблицы и вертикальные разделители, только строки с переносами.",
+    ]
+    if analytics_needed:
+        prompt_parts.append(
+            "Для отчётов используй блок АНАЛИТИКА с метриками и при наличии — БЛИЖАЙШИЕ ЗАЕЗДЫ, каждый пункт с тире."
+        )
+    if marketing_needed:
+        prompt_parts.append(
+            "Если запрос про коммерческое предложение/презентацию — сделай короткое продающее описание, но используй только факты из контекста. "
+            "Можно добавить 1-3 уместных эмодзи для выразительности, без злоупотребления."
+        )
+    prompt_parts.append(f"Контекст:\n{combined_context}\n\nВопрос: {user_msg}\nОтвет:")
+    prompt = " ".join(prompt_parts)
+    print("[CHAT] prompt composed, context length:", len(combined_context))
+
+    try:
+        reply = ask_gigachat(
+            prompt,
+            auth_key=unit.gigachat_auth_key,
+            client_id=unit.gigachat_client_id,
+            chat_url=None,
+            scope=unit.gigachat_scope or None,
+        )
+    except Exception as exc:
+        fallback = (
+            "Ассистент временно недоступен (ошибка подключения к GigaChat). "
+            "Проверьте ключи/подключение и попробуйте позже. "
+            f"Техническая ошибка: {exc}"
+        )
+        # сохраняем в историю, чтобы пользователь видел сообщение
+        chat_history = request.session.get("ai_chat_history", [])
+        chat_history.append({"role": "user", "content": user_msg})
+        chat_history.append({"role": "assistant", "content": fallback})
+        request.session["ai_chat_history"] = chat_history
+        request.session.modified = True
+        return JsonResponse({"reply": fallback, "error": "GIGACHAT_API_ERROR", "message": str(exc)}, status=200)
+
+    chat_history = request.session.get("ai_chat_history", [])
+    chat_history.append({"role": "user", "content": user_msg})
+    chat_history.append({"role": "assistant", "content": reply})
+    request.session["ai_chat_history"] = chat_history
+    request.session.modified = True
+
+    return JsonResponse({"reply": reply})
 
 
 @login_required
@@ -654,9 +912,9 @@ def settings_view(request):
                 user = pwd_form.save()
                 update_session_auth_hash(request, user)
                 messages.success(request, "Пароль обновлён.")
-                return redirect("settings")
             else:
                 messages.error(request, "Не удалось сменить пароль.")
+        return redirect("settings")
 
     context = {
         'unit': unit,

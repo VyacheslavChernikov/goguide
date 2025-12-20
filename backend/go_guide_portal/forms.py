@@ -88,14 +88,77 @@ class AppointmentForm(forms.ModelForm):
 class BusinessUnitForm(forms.ModelForm):
     class Meta:
         model = BusinessUnit
-        fields = ["name", "address", "description", "photo_url"]
+        fields = [
+            "name",
+            "address",
+            "phone",
+            "email",
+            "website",
+            "socials",
+            "working_hours_from",
+            "working_hours_to",
+            "checkin_time",
+            "checkout_time",
+            "parking_info",
+            "wifi_info",
+            "meals_info",
+            "kids_policy",
+            "pets_policy",
+            "smoke_policy",
+            "accessibility",
+            "coordinates",
+            "positioning",
+            "tone",
+            "allow_emoji",
+            "description",
+            "photo_url",
+        ]
         base_input = "w-full px-3 py-2 rounded-lg bg-panel border border-white/10 text-text placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent"
         widgets = {
             "name": forms.TextInput(attrs={"class": base_input, "required": True}),
             "address": forms.TextInput(attrs={"class": base_input}),
+            "phone": forms.TextInput(attrs={"class": base_input, "placeholder": "+7 ..."}),
+            "email": forms.EmailInput(attrs={"class": base_input, "placeholder": "info@example.com"}),
+            "website": forms.URLInput(attrs={"class": base_input, "placeholder": "https://"}),
+            "socials": forms.Textarea(attrs={"class": f"{base_input} min-h-[80px]", "rows": 2, "placeholder": "Ссылки через запятую"}),
+            "working_hours_from": forms.TimeInput(
+                format="%H:%M", attrs={"class": base_input, "type": "time", "step": "60", "placeholder": "09:00"}
+            ),
+            "working_hours_to": forms.TimeInput(
+                format="%H:%M", attrs={"class": base_input, "type": "time", "step": "60", "placeholder": "21:00"}
+            ),
+            "checkin_time": forms.TimeInput(
+                format="%H:%M", attrs={"class": base_input, "type": "time", "step": "60", "placeholder": "14:00"}
+            ),
+            "checkout_time": forms.TimeInput(
+                format="%H:%M", attrs={"class": base_input, "type": "time", "step": "60", "placeholder": "12:00"}
+            ),
+            "parking_info": forms.TextInput(attrs={"class": base_input, "placeholder": "Бесплатная/платная/нет"}),
+            "wifi_info": forms.TextInput(attrs={"class": base_input, "placeholder": "Скорость, пароль, условия"}),
+            "meals_info": forms.TextInput(attrs={"class": base_input, "placeholder": "Завтрак/обеды/ужины/кухня"}),
+            "kids_policy": forms.TextInput(attrs={"class": base_input, "placeholder": "Дети до 5 бесплатно / есть детская кроватка"}),
+            "pets_policy": forms.TextInput(attrs={"class": base_input, "placeholder": "Можно/нельзя, доплата"}),
+            "smoke_policy": forms.TextInput(attrs={"class": base_input, "placeholder": "Запрет/места для курения"}),
+            "accessibility": forms.TextInput(attrs={"class": base_input, "placeholder": "Пандус, лифт, доступная среда"}),
+            "coordinates": forms.TextInput(attrs={"class": base_input, "placeholder": "55.7558, 37.6176 или описание проезда"}),
+            "positioning": forms.Textarea(attrs={"class": f"{base_input} min-h-[100px]", "rows": 3, "placeholder": "УТП, сегменты, ценностное предложение"}),
+            "tone": forms.Select(attrs={"class": f"{base_input} pr-8"}),
+            "allow_emoji": forms.CheckboxInput(attrs={"class": "h-4 w-4 text-accent border-white/20 rounded"}),
             "description": forms.Textarea(attrs={"class": f"{base_input} min-h-[100px]", "rows": 3}),
             "photo_url": forms.URLInput(attrs={"class": base_input, "placeholder": "https://..."}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Делим обязательные поля на форме (модель оставляем гибкой)
+        for fname in ["email", "working_hours_from", "working_hours_to", "checkin_time", "checkout_time"]:
+            if fname in self.fields:
+                self.fields[fname].required = True
+        # Подсказки
+        self.fields["working_hours_from"].help_text = "Например: 09:00"
+        self.fields["working_hours_to"].help_text = "Например: 21:00"
+        self.fields["checkin_time"].help_text = "Например: 14:00"
+        self.fields["checkout_time"].help_text = "Например: 12:00"
 
 
 class AdminPasswordForm(PasswordChangeForm):
