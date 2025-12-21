@@ -37,6 +37,10 @@ DB_PORT=5432
 DB_NAME=smarthotel
 DB_USER=smarthotel
 DB_PASSWORD=smarthotel
+# GigaChat (опционально, можно вводить через портал)
+GIGACHAT_BASIC_AUTH=base64_or_token
+GIGACHAT_CLIENT_ID=your_client_id
+GIGACHAT_SCOPE=GIGACHAT_API_PERS
 EOF
 
 # запустить, пробросив порт
