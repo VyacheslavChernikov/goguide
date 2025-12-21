@@ -1201,6 +1201,17 @@ def settings_view(request):
         messages.error(request, "Вы не привязаны к площадке.")
         return redirect("go_guide_dashboard")
 
+    ui_texts = get_ui_texts(unit)
+    business_type = getattr(unit, "business_type", "service") or "service"
+    submit_label_map = {
+        "service": "Записаться",
+        "event": "Купить билет",
+        "tour": "Забронировать",
+        "rent": "Забронировать",
+        "hotel": "Забронировать",
+    }
+    default_submit = submit_label_map.get(business_type, "Забронировать")
+
     unit_form = BusinessUnitForm(instance=unit)
     pwd_form = AdminPasswordForm(user=request.user)
     payout_form = PayoutRequestForm()
@@ -1208,9 +1219,10 @@ def settings_view(request):
     # embed code for booking widget
     base_url = request.build_absolute_uri("/").rstrip("/")
     webhook_url = request.build_absolute_uri(reverse("payout_webhook"))
+    hide_end_attr = ' data-hide-end="true"' if business_type == "service" else ""
     embed_code = (
         f'<script src="{base_url}/static/widget/booking-widget.js" defer></script>\n'
-        f'<booking-widget data-bu-id="{unit.id}" data-api-base="{base_url}/api"></booking-widget>'
+        f'<booking-widget data-bu-id="{unit.id}" data-api-base="{base_url}/api" data-label-submit="{default_submit}"{hide_end_attr}></booking-widget>'
     )
 
     payouts = PayoutRequest.objects.filter(business_unit=unit).order_by("-created_at")[:20]
@@ -1274,6 +1286,8 @@ def settings_view(request):
         'balance': balance,
         'payout_provider': payout_provider,
         'webhook_url': webhook_url,
+        'ui_texts': ui_texts,
+        'default_submit': default_submit,
     }
     return render(request, "go_guide_portal/settings.html", context)
 

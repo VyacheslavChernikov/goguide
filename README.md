@@ -22,6 +22,33 @@ python manage.py migrate
 python manage.py runserver
 ```
 
+## Деплой в Docker (backend)
+```bash
+# сборка образа (multi-stage, gunicorn):
+docker build -t smarthotel-backend -f backend/Dockerfile backend
+
+# переменные окружения (пример)
+cat > .env <<'EOF'
+SECRET_KEY=change-me
+DEBUG=0
+ALLOWED_HOSTS=your-domain.com
+DB_HOST=postgres
+DB_PORT=5432
+DB_NAME=smarthotel
+DB_USER=smarthotel
+DB_PASSWORD=smarthotel
+EOF
+
+# запустить, пробросив порт
+docker run -d --name smarthotel-backend \
+  --env-file .env \
+  -p 8000:8000 \
+  smarthotel-backend
+```
+- На старте entrypoint выполнит `python manage.py migrate`, затем запустит gunicorn (`PORT/WORKERS/THREADS/TIMEOUT` можно задать env).
+- Для прод окружения добавьте прокси/HTTPS и корректный `ALLOWED_HOSTS`.
+- Статика собирается на этапе сборки (`collectstatic`), DB должна быть доступна (Postgres).
+
 ## Ключевые файлы
 - `backend/go_guide_portal/views.py` — логика портала, CRUD, выплаты, вебхук.
 - `backend/go_guide_portal/templates/go_guide_portal/` — страницы портала (услуги, бронирования, аналитика, настройки).

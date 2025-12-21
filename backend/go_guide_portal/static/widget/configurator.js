@@ -2,6 +2,16 @@
   const cfg = document.getElementById("widget-configurator");
   if (!cfg) return;
 
+  // сохраняем флаг из исходного embed (например, data-hide-end), чтобы не потерять при пересборке
+  const staticFlags = {
+    hideEnd: (() => {
+      const embedVal = (document.getElementById("embedCode") || {}).value || "";
+      if (/\bdata-hide-end="true"/.test(embedVal)) return true;
+      const def = cfg.dataset.defaultHideEnd === "true";
+      return def;
+    })(),
+  };
+  const defaultSubmit = cfg.dataset.defaultSubmit || "Забронировать";
   const embedTextarea = document.getElementById("embedCode");
   const hiddenField = document.querySelector('input[name="widget_config"]');
   const presetTheme = cfg.querySelector("#presetTheme");
@@ -21,6 +31,9 @@
     hideEmail: cfg.querySelector("#cfgHideEmail"),
     autoOpen: cfg.querySelector("#cfgAutoOpen"),
   };
+
+  // отображаем дефолт по бизнес-типу в placeholder
+  fields.submit.placeholder = defaultSubmit;
 
   function getConfig() {
     try {
@@ -77,7 +90,7 @@
     data.radius = fields.radius.value || data.radius || "12px";
     data.fontFamily = fields.font.value || data.fontFamily || "'Inter', system-ui, sans-serif";
     data.previewHeight = fields.previewHeight.value || data.previewHeight || "70vh";
-    data.submit = fields.submit.value || data.submit || "Забронировать";
+    data.submit = fields.submit.value || data.submit || defaultSubmit;
     data.hideEmail = fields.hideEmail.checked;
     data.autoOpenPreview = fields.autoOpen.checked;
     setConfig(data);
@@ -108,6 +121,7 @@
       "data-hide-email": data.hideEmail ? "true" : "false",
       "data-auto-open-preview": data.autoOpenPreview ? "true" : "false",
       "data-width": data.width,
+      "data-hide-end": staticFlags.hideEnd ? "true" : undefined,
     })
       .filter(([, v]) => v !== undefined && v !== null && v !== "")
       .map(([k, v]) => `${k}="${v}"`)
@@ -125,4 +139,5 @@
   // init
   fillFormFromConfig();
 })();
+
 

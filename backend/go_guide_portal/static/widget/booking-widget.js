@@ -24,9 +24,9 @@
       };
       this.labels = {
         title: this.getAttribute("data-label-title") || "Онлайн-бронирование",
-        service: this.getAttribute("data-label-service") || "Услуга / номер",
-        start: this.getAttribute("data-label-start") || "Дата и время начала",
-        end: this.getAttribute("data-label-end") || "Дата и время окончания",
+        service: this.getAttribute("data-label-service") || "Выберите услугу",
+        start: this.getAttribute("data-label-start") || "Желаемая дата и время начала",
+        end: this.getAttribute("data-label-end") || "Окончание (если нужно)",
         name: this.getAttribute("data-label-name") || "Имя",
         phone: this.getAttribute("data-label-phone") || "Телефон",
         email: this.getAttribute("data-label-email") || "Email",
@@ -43,6 +43,7 @@
         previewHeight: this.theme.previewHeight,
         scrollIntoView: this.getAttribute("data-scroll-into-view") === "true",
         cardWidth: this.getAttribute("data-width") || "100%",
+        hideEnd: this.getAttribute("data-hide-end") === "true",
       };
       this._services = [];
     }
@@ -62,6 +63,7 @@
         input, select, textarea { width:100%; padding:10px; border-radius:${t.radius}; border:1px solid ${t.border}; background:${t.panel}; color:${t.text}; font-size:14px; box-sizing:border-box; }
         input:focus, select:focus, textarea:focus { outline:2px solid ${t.accent}44; border-color:${t.accent}; }
         .row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+        .row.single { grid-template-columns:1fr; }
         .btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:10px 14px; border-radius:${t.radius}; background:${t.accent}; color:${t.panel}; font-weight:700; cursor:pointer; border:none; transition:transform .1s ease, box-shadow .1s ease; }
         .btn:hover { transform:translateY(-1px); box-shadow:0 8px 24px ${t.accent}55; }
         .btn:disabled { opacity:0.6; cursor:not-allowed; }
@@ -85,15 +87,19 @@
               <select name="service" required id="service"></select>
               <div class="muted" id="serviceHint"></div>
             </div>
-            <div class="row" style="margin-top:12px;">
+            <div class="row ${this.options.hideEnd ? "single" : ""}" style="margin-top:12px;">
               <div>
                 <label>${this.labels.start}</label>
                 <input type="datetime-local" name="start_at" required />
               </div>
-              <div>
+              ${
+                this.options.hideEnd
+                  ? ""
+                  : `<div>
                 <label>${this.labels.end}</label>
                 <input type="datetime-local" name="end_at" required />
-              </div>
+              </div>`
+              }
             </div>
             <div class="row" style="margin-top:12px;">
               <div>
@@ -275,7 +281,7 @@
         client_phone: formData.get("client_phone"),
         client_email: formData.get("client_email") || "",
         start_at: formData.get("start_at"),
-        end_at: formData.get("end_at"),
+        end_at: formData.get("end_at") || (this.options.hideEnd ? formData.get("start_at") : null),
       };
       this.setLoading(true);
       try {

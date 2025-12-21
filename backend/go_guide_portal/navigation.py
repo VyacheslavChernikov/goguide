@@ -123,3 +123,4 @@ def get_dashboard_labels(ui_texts: dict):
         "service_column": ui_texts["service_singular"],
     }
 
+
