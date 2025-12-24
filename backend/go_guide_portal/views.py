@@ -4,6 +4,7 @@ import io
 import json
 import csv
 import uuid
+import logging
 from decimal import Decimal
 from datetime import timedelta, datetime
 from pathlib import Path
@@ -32,7 +33,19 @@ from go_guide_portal.forms import (
     PayoutRequestForm,
 )
 from go_guide_portal.navigation import get_ui_texts, get_dashboard_labels
-from bot.gigachat_ai import ask_gigachat, get_gigachat_access_token
+
+logger = logging.getLogger(__name__)
+
+try:
+    from bot.gigachat_ai import ask_gigachat, get_gigachat_access_token
+except ModuleNotFoundError:
+    logger.warning("bot.gigachat_ai not found; AI assistant disabled in this build.")
+
+    def ask_gigachat(*args, **kwargs):
+        return "Ассистент недоступен: модуль бота не установлен."
+
+    def get_gigachat_access_token(*args, **kwargs):
+        return None
 
 # Грузим .env из корня проекта и из backend (рядом с manage.py) — чтобы работало в обоих кейсах
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
