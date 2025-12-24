@@ -21,8 +21,7 @@ services:
       start_period: 5s
 
   backend:
-    build:
-      context: ./backend
+    image: positiv38/smarthotel-backend:latest
     container_name: smarthotel_backend
     restart: always
     depends_on:
