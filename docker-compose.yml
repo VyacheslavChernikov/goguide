@@ -36,6 +36,7 @@ services:
       DB_NAME: smarthotel
       DB_USER: smarthotel
       DB_PASSWORD: smarthotel
+      ALLOWED_HOSTS: "localhost,127.0.0.1,backend,smarthotel_backend,goguide.pozitive.biz"
 
   bot:
     profiles: ["bot"]  # disabled by default; run with `--profile bot`
