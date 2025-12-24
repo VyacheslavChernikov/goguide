@@ -30,6 +30,7 @@ services:
     ports:
       - "8000:8000"
     environment:
+      DB_SQLITE: "False"
       DB_HOST: postgres
       DB_PORT: 5432
       DB_NAME: smarthotel
