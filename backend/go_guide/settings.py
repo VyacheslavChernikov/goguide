@@ -27,13 +27,17 @@ if str(PROJECT_ROOT) not in sys.path:
 SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-please-change-in-prod")
 DEBUG = os.getenv("DEBUG", "True") == "True"  # ← В dev пусть будет True
 
-# ← ИСПРАВЛЕНО: ALLOWED_HOSTS — разрешаем доступ из бота по имени сервиса
-ALLOWED_HOSTS = [
-    'localhost',
-    '127.0.0.1',
-    'backend',               # ← имя сервиса в Docker Compose
-    'smarthotel_backend',    # ← container_name (на всякий случай)
-]
+# ← ALLOWED_HOSTS: читаем из ENV (ALLOWED_HOSTS=host1,host2) или используем дефолт
+_allowed_hosts_env = os.getenv("ALLOWED_HOSTS")
+if _allowed_hosts_env:
+    ALLOWED_HOSTS = [h.strip() for h in _allowed_hosts_env.split(",") if h.strip()]
+else:
+    ALLOWED_HOSTS = [
+        'localhost',
+        '127.0.0.1',
+        'backend',               # имя сервиса в Docker Compose
+        'smarthotel_backend',    # container_name
+    ]
 DEBUG = True
 
 # ====================================
