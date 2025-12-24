@@ -37,6 +37,7 @@ services:
       DB_PASSWORD: smarthotel
 
   bot:
+    profiles: ["bot"]  # disabled by default; run with `--profile bot`
     build:
       context: ./bot
     container_name: smarthotel_bot
@@ -46,7 +47,7 @@ services:
         condition: service_started
     environment:
       API_BASE_URL: http://backend:8000/api/
-      BOT_TOKEN: ${BOT_TOKEN}
+      BOT_TOKEN: ${BOT_TOKEN:-}
 
 volumes:
   smarthotel_postgres_data:   # ← вот здесь двоеточие обязательно!
